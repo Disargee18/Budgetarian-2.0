@@ -1,103 +1,139 @@
 import React from 'react';
 import { useUser } from '../context/UserContext';
-import { calculateTDEE, adjustCaloriesForGoal } from '../lib/mealGenerator';
-import { Edit2, Flame, Target, Utensils } from 'lucide-react';
-import './Overview.css';
-import { Link } from 'react-router-dom';
+import { Camera, Edit3, Target, Activity, Flame, Lightbulb } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { fadeUp, staggerContainer, breathe, cardFloat } from '../lib/animations';
 
 const Overview = () => {
-  const { profile, metrics, mealPlan } = useUser();
+  const { profile, metrics, budget } = useUser();
 
   if (!profile || !metrics) return <div>Loading...</div>;
 
-  const bmi = (metrics.weight / ((metrics.height / 100) ** 2)).toFixed(1);
-  const tdee = calculateTDEE(metrics.weight, metrics.height, profile.age, profile.gender, metrics.activity);
-  const targetCals = adjustCaloriesForGoal(tdee, metrics.goal);
+  const calculateBMI = () => {
+    if (!metrics.height || !metrics.weight) return null;
+    const heightInMeters = parseFloat(metrics.height) / 100;
+    const weightInKg = parseFloat(metrics.weight);
+    return (weightInKg / (heightInMeters * heightInMeters)).toFixed(1);
+  };
 
-  // Calculate meals logged
-  let totalMeals = 0;
-  let eatenMeals = 0;
-  Object.values(mealPlan).forEach(day => {
-    Object.values(day).forEach(meal => {
-      totalMeals++;
-      if (meal.eaten) eatenMeals++;
-    });
-  });
+  const getBMIGradient = (bmi) => {
+    if (!bmi) return "from-[#97C459] to-[#27500A]";
+    if (bmi < 18.5) return "from-[#EF9F27] to-[#BA7517]";
+    if (bmi < 25) return "from-[#97C459] to-[#27500A]";
+    if (bmi < 30) return "from-[#EF9F27] to-[#BA7517]";
+    return "from-[#D32F2F] to-[#851D1D]";
+  };
+
+  const bmi = calculateBMI();
 
   return (
-    <div className="overview-container">
-      <header className="mb-lg">
-        <h2>Your Profile Overview</h2>
+    <div className="space-y-8">
+      <header className="mb-8">
+        <h2 className="font-heading text-4xl md:text-5xl font-extrabold text-clay-fg tracking-tight">
+          Your Profile
+        </h2>
       </header>
 
-      <div className="bento-container overview-grid">
-        {/* Profile Card */}
-        <div className="bento-card profile-main-card">
-          <div className="profile-header">
-            <div className="avatar-circle">
-              {profile.name.charAt(0).toUpperCase()}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 gap-6 md:grid-cols-3"
+      >
+        {/* Hero Profile Card */}
+        <motion.div variants={fadeUp} className="md:col-span-2">
+          <div className="rounded-clayLg bg-white/65 p-8 md:p-10 shadow-clayCard backdrop-blur-xl h-full flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#97C459]/10 blur-2xl"></div>
+            
+            <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-[#639922]/20 shadow-clayButton bg-gradient-to-br from-[#639922] to-[#27500A] text-white">
+              {profile.photo ? (
+                <img src={profile.photo} alt={profile.name} className="h-full w-full rounded-full object-cover" />
+              ) : (
+                <span className="font-heading text-4xl font-black">{profile.name.charAt(0)}</span>
+              )}
             </div>
-            <div>
-              <h3 className="text-xl mb-xs">{profile.name}</h3>
-              <p className="text-muted">{profile.age} years • {profile.gender}</p>
-            </div>
-          </div>
-          
-          <div className="profile-stats mt-lg">
-            <div className="stat-box">
-              <span className="stat-label">Weight</span>
-              <span className="stat-value">{metrics.weight} kg</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">Height</span>
-              <span className="stat-value">{metrics.height} cm</span>
-            </div>
-            <div className="stat-box">
-              <span className="stat-label">BMI</span>
-              <span className="stat-value">{bmi}</span>
-            </div>
-          </div>
-          
-          <div className="mt-md flex justify-center">
-            <Link to="/settings" className="btn btn-outline text-sm">
-              <Edit2 size={14} className="mr-sm" /> Edit Profile
-            </Link>
-          </div>
-        </div>
 
-        {/* Goal Badge */}
-        <div className="bento-card goal-card">
-          <Target className="text-primary mb-md" size={32} />
-          <h3 className="mb-xs text-lg">Current Goal</h3>
-          <p className="font-medium text-primary-dark">{metrics.goal}</p>
-          <div className="goal-target mt-md">
-            <Flame className="text-accent mr-sm" size={18} />
-            <span>Target: {targetCals} kcal/day</span>
-          </div>
-        </div>
+            <div className="flex-1 text-center md:text-left z-10">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                <h3 className="font-heading text-3xl font-black text-clay-fg">{profile.name}</h3>
+                <motion.button whileTap={{ scale: 0.9 }} className="flex items-center justify-center gap-2 rounded-full bg-[#EFEBF5] px-4 py-2 font-body text-sm font-medium text-clay-muted shadow-clayPressed hover:bg-white transition-colors self-center md:self-auto">
+                  <Edit3 size={16} /> Edit
+                </motion.button>
+              </div>
+              
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
+                <span className="rounded-full bg-gradient-to-br from-[#EF9F27] to-[#BA7517] px-4 py-1.5 font-body text-sm font-bold text-white shadow-clayButton flex items-center gap-2">
+                  <Target size={16} /> {metrics.goal}
+                </span>
+                <span className="rounded-full bg-white/80 px-4 py-1.5 font-body text-sm font-medium text-clay-muted shadow-clayCard">
+                  {profile.age} years old
+                </span>
+                <span className="rounded-full bg-white/80 px-4 py-1.5 font-body text-sm font-medium text-clay-muted shadow-clayCard">
+                  {profile.gender}
+                </span>
+              </div>
 
-        {/* Weekly Summary */}
-        <div className="bento-card summary-card">
-          <Utensils className="text-primary mb-md" size={32} />
-          <h3 className="mb-xs text-lg">Weekly Summary</h3>
-          <p className="text-muted mb-md">Meals Logged</p>
-          <div className="progress-bar-container">
-            <div 
-              className="progress-bar" 
-              style={{ width: `${(eatenMeals / totalMeals) * 100}%` }}
-            ></div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="font-body text-xs text-clay-muted mb-1">Height</p>
+                  <p className="font-heading text-xl font-bold text-clay-fg">{metrics.height} cm</p>
+                </div>
+                <div>
+                  <p className="font-body text-xs text-clay-muted mb-1">Weight</p>
+                  <p className="font-heading text-xl font-bold text-clay-fg">{metrics.weight} kg</p>
+                </div>
+                <div>
+                  <p className="font-body text-xs text-clay-muted mb-1">Budget</p>
+                  <p className="font-heading text-xl font-bold text-clay-fg">{budget.currency}{budget.weekly}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="text-sm font-medium mt-sm">{eatenMeals} / {totalMeals} meals eaten</p>
-        </div>
+        </motion.div>
 
-        {/* Daily Tip */}
-        <div className="bento-card tip-card">
-          <h3 className="mb-md text-primary-dark">💡 Daily Health Tip</h3>
-          <p className="font-medium text-lg leading-relaxed">
-            "Drinking a glass of water before meals can help you feel more full and support digestion. Stay hydrated!"
-          </p>
-        </div>
-      </div>
+        {/* BMI Orb Card */}
+        <motion.div variants={fadeUp} className="md:col-span-1">
+          <div className="rounded-clay bg-white/65 p-8 shadow-clayCard backdrop-blur-xl h-full flex flex-col items-center justify-center text-center">
+            <h3 className="font-heading text-xl font-bold text-clay-fg mb-6">Body Mass Index</h3>
+            {bmi && (
+              <motion.div
+                variants={breathe}
+                animate="animate"
+                className={`flex h-40 w-40 flex-col items-center justify-center rounded-full bg-gradient-to-br ${getBMIGradient(bmi)} shadow-clayButton mb-6`}
+              >
+                <span className="font-heading text-4xl font-black text-white">{bmi}</span>
+                <span className="font-body text-sm font-medium text-white/80">BMI</span>
+              </motion.div>
+            )}
+            <p className="font-body text-sm text-clay-muted">Your BMI is currently in the <strong className="text-clay-fg">{bmi < 25 ? 'Healthy' : 'Overweight'}</strong> range.</p>
+          </div>
+        </motion.div>
+
+        {/* Stat Cards */}
+        {[
+          { label: 'Activity Level', value: metrics.activity, icon: Activity, color: 'text-[#27500A]', bg: 'bg-[#639922]/15' },
+          { label: 'Weekly Meals', value: '21 scheduled', icon: Flame, color: 'text-[#BA7517]', bg: 'bg-[#EF9F27]/15' },
+          { label: 'Dietary Prefs', value: 'Vegetarian', icon: Lightbulb, color: 'text-[#27500A]', bg: 'bg-[#639922]/15' }
+        ].map((stat, idx) => (
+          <motion.div key={idx} variants={fadeUp}>
+            <motion.div 
+              variants={cardFloat} 
+              initial="rest" 
+              whileHover="hover"
+              className="rounded-clay bg-white/65 p-6 shadow-clayCard backdrop-blur-xl flex items-center gap-4"
+            >
+              <div className={`flex h-14 w-14 items-center justify-center rounded-full ${stat.bg}`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              </div>
+              <div>
+                <p className="font-body text-sm text-clay-muted mb-1">{stat.label}</p>
+                <p className="font-heading text-lg font-bold text-clay-fg">{stat.value}</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        ))}
+
+      </motion.div>
     </div>
   );
 };
