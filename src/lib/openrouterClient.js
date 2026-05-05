@@ -3,8 +3,8 @@ export async function sendChatMessage(messages, userContext = {}) {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY || ''}`,
+        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
         'X-Title': 'Budgetarian',
         'Content-Type': 'application/json',
       },
@@ -77,13 +77,13 @@ export async function generateMealPlanAI(userContext) {
 - Activity Level: ${userContext.metrics?.activity}
 - Weight: ${userContext.metrics?.weight}kg, Height: ${userContext.metrics?.height}cm
 
-The output MUST be a valid JSON object matching this structure:
+The output MUST be a valid JSON object matching this structure and must give ONLY famous Filipino foods:
 {
   "Monday": {
-    "Breakfast": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-    "Lunch": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-    "Dinner": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-    "Snacks": { "name": "...", "cals": 0, "cost": 0, "description": "..." }
+    "Breakfast": { "name": "...", "type": "Breakfast", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+    "Lunch": { "name": "...", "type": "Lunch", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+    "Dinner": { "name": "...", "type": "Dinner", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+    "Snacks": { "name": "...", "type": "Snack", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." }
   },
   ... (rest of the days)
 }
@@ -93,8 +93,8 @@ Ensure the total weekly cost is within the budget and meals are appropriate for 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY || ''}`,
+        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
         'X-Title': 'Budgetarian',
         'Content-Type': 'application/json',
       },
@@ -119,8 +119,13 @@ Ensure the total weekly cost is within the budget and meals are appropriate for 
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    const cleanJson = content.replace(/```json|```/g, '').trim();
-    return JSON.parse(cleanJson);
+    
+    // Robust JSON extraction: find the first '{' and last '}'
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in AI response");
+    }
+    return JSON.parse(jsonMatch[0]);
   } catch (error) {
     console.error('Failed to generate AI meal plan:', error);
     throw error;
@@ -140,10 +145,10 @@ export async function generateDailyMealPlanAI(userContext, day) {
 
 The output MUST be a valid JSON object for this SPECIFIC DAY ONLY matching this structure:
 {
-  "Breakfast": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-  "Lunch": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-  "Dinner": { "name": "...", "cals": 0, "cost": 0, "description": "..." },
-  "Snacks": { "name": "...", "cals": 0, "cost": 0, "description": "..." }
+  "Breakfast": { "name": "...", "type": "Breakfast", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+  "Lunch": { "name": "...", "type": "Lunch", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+  "Dinner": { "name": "...", "type": "Dinner", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
+  "Snacks": { "name": "...", "type": "Snack", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." }
 }
 
 Ensure the cost is within a reasonable daily portion of the weekly budget and meals are appropriate. Return ONLY the JSON object.`;
@@ -151,8 +156,8 @@ Ensure the cost is within a reasonable daily portion of the weekly budget and me
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY || ''}`,
+        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : '',
         'X-Title': 'Budgetarian',
         'Content-Type': 'application/json',
       },
@@ -177,8 +182,13 @@ Ensure the cost is within a reasonable daily portion of the weekly budget and me
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    const cleanJson = content.replace(/```json|```/g, '').trim();
-    return JSON.parse(cleanJson);
+    
+    // Robust JSON extraction: find the first '{' and last '}'
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in AI response");
+    }
+    return JSON.parse(jsonMatch[0]);
   } catch (error) {
     console.error('Failed to generate AI daily meal plan:', error);
     throw error;

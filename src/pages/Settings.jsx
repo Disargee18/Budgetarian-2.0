@@ -15,7 +15,7 @@ const ClayInput = (props) => (
 );
 
 const Settings = () => {
-  const { logout, profile, budget, metrics, preferences, allergies, healthConditions, setProfile, setBudget, setMetrics, setPreferences, setAllergies, setHealthConditions, saveProfile, saveBudget, savePreferences } = useUser();
+  const { session, logout, profile, budget, metrics, preferences, allergies, healthConditions, setProfile, setBudget, setMetrics, setPreferences, setAllergies, setHealthConditions, saveProfile, saveBudget, savePreferences } = useUser();
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');

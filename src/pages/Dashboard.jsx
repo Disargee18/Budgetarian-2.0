@@ -6,7 +6,7 @@ import { cardFloat, breathe, fadeUp, staggerContainer, checkMark, clayButton, sc
 import { generateWeeklyPlan } from '../lib/mealGenerator';
 import { generateDailyMealPlanAI } from '../lib/openrouterClient';
 
-const MealChecklistRow = ({ id, mealName, calories, cost, checked, toggle, disabled }) => (
+const MealChecklistRow = ({ id, mealName, calories, protein, cost, tags, checked, toggle, disabled }) => (
   <motion.div
     layout
     className={`flex items-center gap-3 rounded-clayMd bg-white/65 p-4 shadow-clayCard backdrop-blur-xl ${disabled ? "opacity-75 grayscale-[0.2]" : ""}`}
@@ -15,7 +15,7 @@ const MealChecklistRow = ({ id, mealName, calories, cost, checked, toggle, disab
       whileTap={disabled ? {} : { scale: 0.88 }}
       onClick={() => !disabled && toggle(id)}
       disabled={disabled}
-      className={`h-7 w-7 rounded-[12px] border-2 transition-all duration-200 shadow-clayPressed flex items-center justify-center ${
+      className={`h-7 w-7 flex-shrink-0 rounded-[12px] border-2 transition-all duration-200 shadow-clayPressed flex items-center justify-center ${
         checked
           ? "border-[#27500A] bg-gradient-to-br from-[#639922] to-[#27500A]"
           : "border-clay-muted/30 bg-[#EFEBF5]"
@@ -38,27 +38,32 @@ const MealChecklistRow = ({ id, mealName, calories, cost, checked, toggle, disab
               fill="none" 
               strokeLinecap="round" 
               strokeLinejoin="round"
-              variants={checkMark} 
             />
           </motion.svg>
         )}
       </AnimatePresence>
     </motion.button>
-
-    <div className="flex flex-col">
-      <span className={`font-body font-medium transition-all duration-200 ${checked ? "line-through text-clay-muted" : "text-clay-fg"}`}>
-        {mealName}
-      </span>
-      <span className="font-body text-xs text-clay-muted">{id}</span>
-    </div>
-
-    <div className="ml-auto flex gap-2">
-      <span className="rounded-full bg-[#EF9F27]/15 px-3 py-1 font-body text-xs font-bold text-[#BA7517]">
-        {calories} kcal
-      </span>
-      <span className="rounded-full bg-[#639922]/15 px-3 py-1 font-body text-xs font-bold text-[#27500A]">
-        {cost}
-      </span>
+    
+    <div className="flex-1 overflow-hidden">
+      <div className="flex items-center justify-between gap-2">
+        <p className={`font-heading text-base font-bold truncate ${checked ? "text-clay-muted line-through" : "text-clay-fg"}`}>
+          {mealName}
+        </p>
+        <span className="shrink-0 font-body text-sm font-bold text-clay-primary">{cost}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+        <p className="font-body text-xs text-clay-muted">
+          <span className="font-bold text-clay-secondary">{calories}</span> kcal
+        </p>
+        <p className="font-body text-xs text-clay-muted">
+          <span className="font-bold text-clay-secondary">{protein}g</span> protein
+        </p>
+        {tags && tags.slice(0, 2).map((tag, i) => (
+          <span key={i} className="text-[10px] bg-clay-canvas/50 px-1.5 py-0.5 rounded-full text-clay-muted font-medium border border-clay-muted/10">
+            {tag}
+          </span>
+        ))}
+      </div>
     </div>
   </motion.div>
 );
@@ -104,7 +109,7 @@ const CalorieRing = ({ calories, maxCalories }) => {
 const Dashboard = () => {
   const { profile, budget, mealPlan, updateMealPlan, isLoading, metrics, preferences, allergies, healthConditions } = useUser();
   const [activeDay, setActiveDay] = useState('Monday');
-  const MAX_DAILY_REGENS = 3;
+  const MAX_DAILY_REGENS = 4;
 
   const getRegenCount = () => {
     const stored = localStorage.getItem('budgetarian_regen');
@@ -117,12 +122,23 @@ const Dashboard = () => {
 
   const [regenCount, setRegenCount] = useState(getRegenCount());
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   
   useEffect(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const today = new Date().getDay();
     setActiveDay(days[today]);
   }, []);
+
+  useEffect(() => {
+    // Timeout for loading state
+    const timer = setTimeout(() => {
+      if (isLoading && (!profile || Object.keys(mealPlan).length === 0)) {
+        setLoadError("It's taking longer than expected to load your data. Please check your connection or try refreshing.");
+      }
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [isLoading, profile, mealPlan]);
 
   const handleToggleMeal = (day, mealType) => {
     const newPlan = { ...mealPlan };
@@ -154,16 +170,85 @@ const Dashboard = () => {
       if (dayEaten === dayTotal && dayTotal > 0) streak++;
     });
 
-    const remaining = budget.weekly - spent;
+    const remaining = (budget?.weekly || 0) - spent;
     return { spent, remaining, adherence: Math.round((totalMealsEaten / totalMeals) * 100) || 0, streak };
   };
 
-  if (isLoading || !profile || Object.keys(mealPlan).length === 0) {
+  if (loadError && (!profile || Object.keys(mealPlan).length === 0)) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center p-8">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-red-100 text-red-500">
+            <RotateCcw size={32} />
+          </div>
+          <h2 className="font-heading text-2xl font-bold text-clay-fg">Loading Timeout</h2>
+          <p className="font-body text-clay-muted">{loadError}</p>
+          <motion.button
+            variants={clayButton}
+            whileHover="hover"
+            whileTap="tap"
+            onClick={() => window.location.reload()}
+            className="inline-flex h-12 items-center justify-center rounded-claySm bg-gradient-to-br from-[#639922] to-[#27500A] px-8 font-heading font-bold text-white shadow-clayButton"
+          >
+            Refresh Page
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="flex h-full min-h-[60vh] items-center justify-center">
         <div className="text-center space-y-4">
           <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#639922]/20 border-t-[#639922]" />
-          <p className="font-body text-clay-muted">Preparing your meal plan...</p>
+          <p className="font-body text-clay-muted">Fetching your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!profile || Object.keys(mealPlan).length === 0) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center p-8">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-[#639922]/10 text-clay-primary">
+            <Lightbulb size={32} />
+          </div>
+          <h2 className="font-heading text-2xl font-bold text-clay-fg">No Meal Plan Found</h2>
+          <p className="font-body text-clay-muted">
+            We couldn't find an active meal plan for your profile. This can happen if the initial generation was interrupted.
+          </p>
+          <motion.button
+            variants={clayButton}
+            whileHover="hover"
+            whileTap="tap"
+            onClick={async () => {
+              setLoadError(null);
+              setIsRegenerating(true);
+              try {
+                const userData = { profile, metrics, budget, preferences, allergies, healthConditions };
+                let plan;
+                try {
+                  plan = await generateMealPlanAI(userData);
+                } catch (e) {
+                  console.error("AI Generation failed, using mock", e);
+                  plan = generateWeeklyPlan(userData).plan;
+                }
+                await updateMealPlan(plan);
+              } catch (err) {
+                setLoadError("Failed to generate plan. Please try again.");
+              } finally {
+                setIsRegenerating(false);
+              }
+            }}
+            disabled={isRegenerating}
+            className="inline-flex h-14 items-center justify-center rounded-claySm bg-gradient-to-br from-[#639922] to-[#27500A] px-8 font-heading font-bold text-white shadow-clayButton disabled:opacity-70"
+          >
+            {isRegenerating ? 'Generating...' : 'Generate New Plan'}
+          </motion.button>
+          
+          {loadError && <p className="text-red-500 text-sm font-body">{loadError}</p>}
         </div>
       </div>
     );
@@ -223,7 +308,9 @@ const Dashboard = () => {
                     id={mealType}
                     mealName={meal.name}
                     calories={meal.cals}
+                    protein={meal.protein || 0}
                     cost={`${budget.currency}${meal.cost}`}
+                    tags={meal.tags}
                     checked={meal.eaten}
                     toggle={(id) => handleToggleMeal(activeDay, id)}
                     disabled={activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' })}
@@ -297,7 +384,7 @@ const Dashboard = () => {
                       meal.eaten 
                         ? "bg-[#639922]/15 text-[#27500A]" 
                         : "bg-white shadow-clayCard text-clay-fg"
-                    } ${activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'Long' }) ? "opacity-50 cursor-not-allowed" : ""}`}
+                    } ${activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' }) ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {meal.eaten ? "Done" : "Check"}
                   </motion.button>

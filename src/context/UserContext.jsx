@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef  } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 const UserContext = createContext();
@@ -19,25 +19,30 @@ export const UserProvider = ({ children }) => {
 
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastLoadedId = useRef(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        loadUserData(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
+    const handleAuthEvent = async (event, currentSession) => {
+      setSession(currentSession);
+      
+      if (currentSession) {
+        const userId = currentSession.user.id;
+        
+        // Skip reloading if we already have data for this user
+        // This is crucial to prevent re-fetching on tab focus (TOKEN_REFRESHED)
+        if (userId === lastLoadedId.current && isRegistered && profile) {
+          return;
+        }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) {
-        loadUserData(session.user.id);
+        // Only show loading screen for initial load or user change
+        if (userId !== lastLoadedId.current) {
+          setIsLoading(true);
+        }
+
+        lastLoadedId.current = userId;
+        await loadUserData(userId);
       } else {
-        // Clear state if logged out
+        lastLoadedId.current = null;
         setIsRegistered(false);
         setProfile(null);
         setBudget({ weekly: 0, currency: '₱' });
@@ -48,13 +53,33 @@ export const UserProvider = ({ children }) => {
         setMealPlan({});
         setIsLoading(false);
       }
+    };
+
+    // Initialize session
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      if (initialSession) {
+        handleAuthEvent('INITIAL_SESSION', initialSession);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // SIGNED_OUT is handled here to clear state
+      if (event === 'SIGNED_OUT') {
+        handleAuthEvent(event, null);
+      } else if (session) {
+        handleAuthEvent(event, session);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [isRegistered, profile]); // Add dependencies to check state in handleAuthEvent
 
   const loadUserData = async (userId) => {
-    setIsLoading(true);
+    // We don't set isLoading(true) here anymore, it's handled in handleAuthEvent
     let fallbackToLocal = false;
 
     try {
@@ -93,7 +118,7 @@ export const UserProvider = ({ children }) => {
           name: profileData.name,
           age: profileData.age,
           gender: profileData.gender,
-          photo: profileData.photo
+          photo: profileData.profile_picture_url
         });
         setMetrics({
           height: profileData.height,
@@ -150,7 +175,8 @@ export const UserProvider = ({ children }) => {
 
   const saveProfile = async (userData, userId) => {
     const uid = userId || session?.user?.id;
-    if (!uid) return;
+    if (!uid) throw new Error("No user ID available to save profile");
+    
     const { error } = await supabase
       .from('user_profiles')
       .upsert({ 
@@ -161,15 +187,20 @@ export const UserProvider = ({ children }) => {
         height: userData.metrics.height,
         gender: userData.profile.gender,
         activity_level: userData.metrics.activity,
-        photo: userData.profile.photo,
+        profile_picture_url: userData.profile.photo,
         goal: userData.metrics.goal
-      }, { onConflict: 'user_id' });
-    if (error) console.error("Error saving profile:", error);
+      }, { onConflict: 'user_id', ignoreDuplicates: false });
+    
+    if (error) {
+      console.error("Error saving profile:", error);
+      throw error;
+    }
   };
 
   const saveBudget = async (userData, userId) => {
     const uid = userId || session?.user?.id;
-    if (!uid) return;
+    if (!uid) throw new Error("No user ID available to save budget");
+    
     const { error } = await supabase
       .from('user_budgets')
       .upsert({ 
@@ -177,12 +208,17 @@ export const UserProvider = ({ children }) => {
         weekly_budget: userData.budget.weekly, 
         currency: userData.budget.currency 
       }, { onConflict: 'user_id' });
-    if (error) console.error("Error saving budget:", error);
+      
+    if (error) {
+      console.error("Error saving budget:", error);
+      throw error;
+    }
   };
 
   const savePreferences = async (userData, userId) => {
     const uid = userId || session?.user?.id;
-    if (!uid) return;
+    if (!uid) throw new Error("No user ID available to save preferences");
+    
     const { error } = await supabase
       .from('user_preferences')
       .upsert({ 
@@ -191,20 +227,31 @@ export const UserProvider = ({ children }) => {
         allergies: userData.allergies, 
         health_conditions: userData.healthConditions 
       }, { onConflict: 'user_id' });
-    if (error) console.error("Error saving preferences:", error);
+      
+    if (error) {
+      console.error("Error saving preferences:", error);
+      throw error;
+    }
   };
 
-  const saveMealPlan = async (planData) => {
-    if (!session?.user?.id) return;
+  const saveMealPlan = async (planData, userId) => {
+    const uid = userId || session?.user?.id;
+    if (!uid) {
+      console.warn("No user ID available to save meal plan, skipping Supabase save.");
+      return;
+    }
     const today = new Date().toISOString().split('T')[0];
     const { error } = await supabase
       .from('meal_plans')
       .insert({ 
-        user_id: session.user.id, 
+        user_id: uid, 
         week_start_date: today,
         plan_data: planData 
       });
-    if (error) console.error("Error saving meal plan:", error);
+    if (error) {
+      console.error("Error saving meal plan:", error);
+      throw error;
+    }
   };
 
   // Save to local storage whenever state changes (fallback)
@@ -225,14 +272,6 @@ export const UserProvider = ({ children }) => {
   }, [isRegistered, profile, budget, metrics, preferences, allergies, healthConditions, mealPlan]);
 
   const completeRegistration = async (data) => {
-    setProfile(data.profile);
-    setBudget(data.budget);
-    setMetrics(data.metrics);
-    setPreferences(data.preferences);
-    setAllergies(data.allergies);
-    setHealthConditions(data.healthConditions);
-    setIsRegistered(true);
-
     // Get fresh session to ensure userId is available, with a small retry
     let currentSession = null;
     let userId = null;
@@ -250,29 +289,52 @@ export const UserProvider = ({ children }) => {
     }
 
     if (!userId) {
-      console.error('No userId available during registration save even after retries');
       // Fallback: try to get user from state if available
       userId = session?.user?.id;
       userEmail = session?.user?.email;
     }
 
     if (!userId) {
-      console.error('Final check failed: No userId available');
-      return;
+      throw new Error('Final check failed: No userId available for registration');
     }
 
     // Ensure user exists in users table for foreign key constraints
-    const { error: userError } = await supabase.from('users').upsert({ id: userId, email: userEmail }, { onConflict: 'id' });
-    if (userError) console.error('Error creating user row:', userError);
+    const { error: userError } = await supabase.from('users').upsert({ id: userId, email: userEmail });
+    if (userError) {
+      console.error('Error creating user row:', userError);
+      throw userError;
+    }
 
-    await saveProfile(data, userId);
-    await saveBudget(data, userId);
-    await savePreferences(data, userId);
+    // Save everything to Supabase first
+    try {
+      await Promise.all([
+        saveProfile(data, userId),
+        saveBudget(data, userId),
+        savePreferences(data, userId)
+      ]);
+
+      // If successful, update local state
+      setProfile(data.profile);
+      setBudget(data.budget);
+      setMetrics(data.metrics);
+      setPreferences(data.preferences);
+      setAllergies(data.allergies);
+      setHealthConditions(data.healthConditions);
+      setIsRegistered(true);
+      return userId;
+    } catch (err) {
+      console.error("Failed to complete registration in Supabase:", err);
+      throw err;
+    }
   };
 
-  const updateMealPlan = async (newPlan) => {
+  const updateMealPlan = async (newPlan, userId) => {
     setMealPlan(newPlan);
-    await saveMealPlan(newPlan);
+    try {
+      await saveMealPlan(newPlan, userId);
+    } catch (err) {
+      console.error("Failed to save updated meal plan:", err);
+    }
   };
 
   const logout = async () => {
@@ -289,6 +351,7 @@ export const UserProvider = ({ children }) => {
   };
 
   const value = {
+    session,
     isLoading,
     isRegistered,
     profile,

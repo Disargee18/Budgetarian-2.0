@@ -170,15 +170,15 @@ const RegistrationWizard = () => {
         healthConditions: formData.healthConditions
       };
 
-      await completeRegistration(userData);
+      const userId = await completeRegistration(userData);
       try {
         const plan = await generateMealPlanAI(userData);
-        await updateMealPlan(plan);
+        await updateMealPlan(plan, userId);
       } catch (mealErr) {
         console.error('AI Meal generation failed, falling back to mock:', mealErr);
         try {
           const { plan } = generateWeeklyPlan(userData);
-          await updateMealPlan(plan);
+          await updateMealPlan(plan, userId);
         } catch (fallbackErr) {
           console.error('Fallback meal generation failed:', fallbackErr);
         }
