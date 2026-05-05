@@ -5,9 +5,18 @@ import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer, breathe, cardFloat } from '../lib/animations';
 
 const Overview = () => {
-  const { profile, metrics, budget } = useUser();
+  const { profile, metrics, budget, isLoading } = useUser();
 
-  if (!profile || !metrics) return <div>Loading...</div>;
+  if (isLoading || !profile || !metrics) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#639922]/20 border-t-[#639922]" />
+          <p className="font-body text-clay-muted">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   const calculateBMI = () => {
     if (!metrics.height || !metrics.weight) return null;

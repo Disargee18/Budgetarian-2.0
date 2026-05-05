@@ -3,20 +3,23 @@ import { useUser } from '../context/UserContext';
 import { Check, RotateCcw, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardFloat, breathe, fadeUp, staggerContainer, checkMark, clayButton, scaleIn } from '../lib/animations';
+import { generateWeeklyPlan } from '../lib/mealGenerator';
+import { generateDailyMealPlanAI } from '../lib/openrouterClient';
 
-const MealChecklistRow = ({ id, mealName, calories, cost, checked, toggle }) => (
+const MealChecklistRow = ({ id, mealName, calories, cost, checked, toggle, disabled }) => (
   <motion.div
     layout
-    className="flex items-center gap-3 rounded-clayMd bg-white/65 p-4 shadow-clayCard backdrop-blur-xl"
+    className={`flex items-center gap-3 rounded-clayMd bg-white/65 p-4 shadow-clayCard backdrop-blur-xl ${disabled ? "opacity-75 grayscale-[0.2]" : ""}`}
   >
     <motion.button
-      whileTap={{ scale: 0.88 }}
-      onClick={() => toggle(id)}
+      whileTap={disabled ? {} : { scale: 0.88 }}
+      onClick={() => !disabled && toggle(id)}
+      disabled={disabled}
       className={`h-7 w-7 rounded-[12px] border-2 transition-all duration-200 shadow-clayPressed flex items-center justify-center ${
         checked
           ? "border-[#27500A] bg-gradient-to-br from-[#639922] to-[#27500A]"
           : "border-clay-muted/30 bg-[#EFEBF5]"
-      }`}
+      } ${disabled ? "cursor-not-allowed" : ""}`}
     >
       <AnimatePresence>
         {checked && (
@@ -99,8 +102,21 @@ const CalorieRing = ({ calories, maxCalories }) => {
 };
 
 const Dashboard = () => {
-  const { profile, budget, mealPlan, updateMealPlan } = useUser();
+  const { profile, budget, mealPlan, updateMealPlan, isLoading, metrics, preferences, allergies, healthConditions } = useUser();
   const [activeDay, setActiveDay] = useState('Monday');
+  const MAX_DAILY_REGENS = 3;
+
+  const getRegenCount = () => {
+    const stored = localStorage.getItem('budgetarian_regen');
+    if (!stored) return 0;
+    const { count, date } = JSON.parse(stored);
+    const today = new Date().toISOString().split('T')[0];
+    if (date !== today) return 0;
+    return count;
+  };
+
+  const [regenCount, setRegenCount] = useState(getRegenCount());
+  const [isRegenerating, setIsRegenerating] = useState(false);
   
   useEffect(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -142,11 +158,20 @@ const Dashboard = () => {
     return { spent, remaining, adherence: Math.round((totalMealsEaten / totalMeals) * 100) || 0, streak };
   };
 
-  if (!profile || Object.keys(mealPlan).length === 0) return <div>Loading...</div>;
+  if (isLoading || !profile || Object.keys(mealPlan).length === 0) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#639922]/20 border-t-[#639922]" />
+          <p className="font-body text-clay-muted">Preparing your meal plan...</p>
+        </div>
+      </div>
+    );
+  }
 
   const stats = calculateBudgetStats();
-  const todayMeals = mealPlan[activeDay];
-  const todayCalories = Object.values(todayMeals).reduce((acc, meal) => acc + meal.cals, 0);
+  const todayMeals = mealPlan[activeDay] || {};
+  const todayCalories = Object.values(todayMeals).reduce((acc, meal) => acc + (meal.cals || 0), 0);
   const targetDailyCalories = 2000; // Mock target
   
   // Create an array of 7 items for the dot grid (mock past 7 days)
@@ -201,6 +226,7 @@ const Dashboard = () => {
                     cost={`${budget.currency}${meal.cost}`}
                     checked={meal.eaten}
                     toggle={(id) => handleToggleMeal(activeDay, id)}
+                    disabled={activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' })}
                   />
                 ))}
               </AnimatePresence>
@@ -212,10 +238,39 @@ const Dashboard = () => {
                 initial="rest"
                 whileHover="hover"
                 whileTap="tap"
-                className="inline-flex h-12 items-center justify-center rounded-claySm border-2 border-[#EF9F27]/30 bg-transparent px-6 font-heading font-bold tracking-wide text-clay-secondary transition-all duration-200 hover:border-[#EF9F27] hover:bg-[#EF9F27]/5"
+                disabled={regenCount >= MAX_DAILY_REGENS || isRegenerating || activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+                onClick={async () => {
+                  if (regenCount >= MAX_DAILY_REGENS) return;
+                  setIsRegenerating(true);
+                  try {
+                    const userData = {
+                      profile,
+                      metrics,
+                      budget,
+                      preferences,
+                      allergies,
+                      healthConditions
+                    };
+                    const dailyPlan = await generateDailyMealPlanAI(userData, activeDay);
+                    // Only replace the active day
+                    const newPlan = { ...mealPlan, [activeDay]: dailyPlan };
+                    await updateMealPlan(newPlan);
+                    const newCount = regenCount + 1;
+                    setRegenCount(newCount);
+                    const today = new Date().toISOString().split('T')[0];
+                    localStorage.setItem('budgetarian_regen', JSON.stringify({ count: newCount, date: today }));
+                  } catch (err) {
+                    console.error('Regeneration failed:', err);
+                  } finally {
+                    setIsRegenerating(false);
+                  }
+                }}
+                className="inline-flex h-12 items-center justify-center rounded-claySm border-2 border-[#EF9F27]/30 bg-transparent px-6 font-heading font-bold tracking-wide text-clay-secondary transition-all duration-200 hover:border-[#EF9F27] hover:bg-[#EF9F27]/5 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Regenerate Day
+                <RotateCcw className={`mr-2 h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                {activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' }) 
+                  ? 'Viewing Only' 
+                  : isRegenerating ? 'Regenerating...' : `Regenerate Day (${MAX_DAILY_REGENS - regenCount} left)`}
               </motion.button>
             </div>
           </div>
@@ -235,13 +290,14 @@ const Dashboard = () => {
                 <div key={mealType} className="flex items-center justify-between rounded-clayMd bg-[#EFEBF5] p-3 shadow-clayPressed">
                   <span className="font-body text-sm font-medium text-clay-muted">{mealType}</span>
                   <motion.button
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => handleToggleMeal(activeDay, mealType)}
+                    whileTap={activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' }) ? {} : { scale: 0.88 }}
+                    onClick={() => activeDay === new Date().toLocaleDateString('en-US', { weekday: 'long' }) && handleToggleMeal(activeDay, mealType)}
+                    disabled={activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'long' })}
                     className={`rounded-full px-3 py-1 font-body text-xs font-bold transition-colors ${
                       meal.eaten 
                         ? "bg-[#639922]/15 text-[#27500A]" 
                         : "bg-white shadow-clayCard text-clay-fg"
-                    }`}
+                    } ${activeDay !== new Date().toLocaleDateString('en-US', { weekday: 'Long' }) ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {meal.eaten ? "Done" : "Check"}
                   </motion.button>

@@ -4,9 +4,18 @@ import { motion } from 'framer-motion';
 import { fadeUp, staggerContainer, cardFloat } from '../lib/animations';
 
 const Stats = () => {
-  const { mealPlan } = useUser();
+  const { mealPlan, isLoading } = useUser();
 
-  if (!mealPlan || Object.keys(mealPlan).length === 0) return <div>Loading...</div>;
+  if (isLoading || !mealPlan || Object.keys(mealPlan).length === 0) {
+    return (
+      <div className="flex h-full min-h-[60vh] items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#639922]/20 border-t-[#639922]" />
+          <p className="font-body text-clay-muted">Loading your stats...</p>
+        </div>
+      </div>
+    );
+  }
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dailyCalories = days.map(day => {

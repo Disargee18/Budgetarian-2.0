@@ -3,8 +3,10 @@ import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateWeeklyPlan } from '../lib/mealGenerator';
+import { generateMealPlanAI } from '../lib/openrouterClient';
 import { pageTransition, fadeUp, slideUp, breathe, blobFloat, blobFloatAlt, blobFloatSlow, clayButton, scaleIn } from '../lib/animations';
-import { Camera, Check, Activity, Target, Utensils, Zap, Heart, Scale, Flame, Salad } from 'lucide-react';
+import { Camera, Check, Activity, Target, Utensils, Zap, Heart, Scale, Flame, Salad, User } from 'lucide-react';
+import { PRESET_AVATARS } from '../lib/avatars';
 
 const STEPS = [
   'Profile',
@@ -66,6 +68,8 @@ const RegistrationWizard = () => {
   const { completeRegistration, updateMealPlan } = useUser();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -83,7 +87,39 @@ const RegistrationWizard = () => {
     currency: '₱'
   });
 
+  const validateStep = () => {
+    switch (currentStep) {
+      case 0:
+        if (!formData.name.trim()) return 'Please enter your name.';
+        break;
+      case 1:
+        if (!formData.dob) return 'Please enter your date of birth.';
+        if (!formData.gender) return 'Please select your gender.';
+        break;
+      case 2:
+        if (!formData.height) return 'Please enter your height.';
+        if (!formData.weight) return 'Please enter your weight.';
+        break;
+      case 3:
+        if (!formData.activity) return 'Please select your activity level.';
+        break;
+      case 4:
+        if (!formData.goal) return 'Please select a health goal.';
+        break;
+      case 6:
+        if (!formData.budget) return 'Please enter your weekly budget.';
+        break;
+    }
+    return null;
+  };
+
   const handleNext = () => {
+    const error = validateStep();
+    if (error) {
+      setValidationError(error);
+      return;
+    }
+    setValidationError('');
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(curr => curr + 1);
     } else {
@@ -92,6 +128,7 @@ const RegistrationWizard = () => {
   };
 
   const handleBack = () => {
+    setValidationError('');
     if (currentStep > 0) {
       setCurrentStep(curr => curr - 1);
     }
@@ -112,28 +149,45 @@ const RegistrationWizard = () => {
     return "from-[#D32F2F] to-[#851D1D]"; // Obese
   };
 
-  const finishRegistration = () => {
-    const today = new Date();
-    const birthDate = new Date(formData.dob);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
+  const finishRegistration = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const today = new Date();
+      const birthDate = new Date(formData.dob);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      const userData = {
+        profile: { name: formData.name, age, gender: formData.gender, photo: formData.photo },
+        metrics: { height: parseFloat(formData.height), weight: parseFloat(formData.weight), activity: formData.activity, goal: formData.goal },
+        budget: { weekly: parseFloat(formData.budget), currency: formData.currency },
+        preferences: formData.diet,
+        allergies: formData.allergies,
+        healthConditions: formData.healthConditions
+      };
+
+      await completeRegistration(userData);
+      try {
+        const plan = await generateMealPlanAI(userData);
+        await updateMealPlan(plan);
+      } catch (mealErr) {
+        console.error('AI Meal generation failed, falling back to mock:', mealErr);
+        try {
+          const { plan } = generateWeeklyPlan(userData);
+          await updateMealPlan(plan);
+        } catch (fallbackErr) {
+          console.error('Fallback meal generation failed:', fallbackErr);
+        }
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Registration failed:', err);
+      setIsSubmitting(false);
     }
-
-    const userData = {
-      profile: { name: formData.name, age, gender: formData.gender, photo: formData.photo },
-      metrics: { height: parseFloat(formData.height), weight: parseFloat(formData.weight), activity: formData.activity, goal: formData.goal },
-      budget: { weekly: parseFloat(formData.budget), currency: formData.currency },
-      preferences: formData.diet,
-      allergies: formData.allergies,
-      healthConditions: formData.healthConditions
-    };
-
-    completeRegistration(userData);
-    const { plan } = generateWeeklyPlan(userData);
-    updateMealPlan(plan);
-    navigate('/dashboard');
   };
 
   const renderStep = () => {
@@ -144,11 +198,44 @@ const RegistrationWizard = () => {
             <h2 className="font-heading text-3xl font-extrabold text-clay-fg">Create your Profile</h2>
             
             <div className="flex flex-col items-center justify-center gap-4 py-4">
-               <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-4 border-[#639922]/20 shadow-clayButton bg-gradient-to-br from-[#639922] to-[#27500A] text-white">
-                 <Camera size={40} className="opacity-70" />
-                 <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
+               <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-4 border-[#639922]/20 shadow-clayButton bg-gradient-to-br from-[#639922] to-[#27500A] text-white overflow-hidden">
+                 {formData.photo ? (
+                   <img src={formData.photo} alt="Selected avatar" className="h-full w-full object-cover" />
+                 ) : (
+                   <Camera size={40} className="opacity-70" />
+                 )}
                </div>
-               <span className="font-body text-sm font-medium text-clay-muted">Upload Photo (Optional)</span>
+               <span className="font-body text-sm font-medium text-clay-muted">Choose an avatar</span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              {PRESET_AVATARS.map(avatar => (
+                <motion.button
+                  key={avatar.id}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setFormData({...formData, photo: avatar.src})}
+                  className={`relative flex flex-col items-center gap-2 rounded-clayMd p-3 transition-all duration-300 ${
+                    formData.photo === avatar.src
+                      ? 'bg-gradient-to-br from-[#97C459] to-[#27500A] shadow-clayButton'
+                      : 'bg-white/65 shadow-clayCard hover:bg-white'
+                  }`}
+                >
+                  <img src={avatar.src} alt={avatar.label} className="h-14 w-14 rounded-full object-cover" />
+                  <span className={`font-body text-xs font-medium ${
+                    formData.photo === avatar.src ? 'text-white' : 'text-clay-muted'
+                  }`}>{avatar.label}</span>
+                  {formData.photo === avatar.src && (
+                    <motion.div
+                      variants={scaleIn}
+                      initial="hidden"
+                      animate="visible"
+                      className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-clayCard"
+                    >
+                      <Check className="h-3 w-3 text-[#27500A]" />
+                    </motion.div>
+                  )}
+                </motion.button>
+              ))}
             </div>
 
             <div className="space-y-2">
@@ -422,6 +509,12 @@ const RegistrationWizard = () => {
             </AnimatePresence>
           </div>
 
+          {validationError && (
+            <div className="mt-4 rounded-claySm bg-red-100 px-4 py-3 font-body text-sm text-red-600">
+              {validationError}
+            </div>
+          )}
+
           {/* Navigation Buttons */}
           <div className="mt-12 flex justify-between">
             <motion.button
@@ -445,9 +538,10 @@ const RegistrationWizard = () => {
               whileHover="hover"
               whileTap="tap"
               onClick={handleNext}
-              className="inline-flex h-14 items-center justify-center rounded-claySm bg-gradient-to-br from-[#639922] to-[#27500A] px-8 font-heading font-bold tracking-wide text-white shadow-clayButton transition-shadow duration-200 hover:shadow-clayButtonHover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#639922]/30"
+              disabled={isSubmitting}
+              className="inline-flex h-14 items-center justify-center rounded-claySm bg-gradient-to-br from-[#639922] to-[#27500A] px-8 font-heading font-bold tracking-wide text-white shadow-clayButton transition-shadow duration-200 hover:shadow-clayButtonHover focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#639922]/30 disabled:opacity-70"
             >
-              {currentStep === STEPS.length - 1 ? 'Finish' : 'Next'}
+              {currentStep === STEPS.length - 1 ? (isSubmitting ? 'Saving...' : 'Finish') : 'Next'}
             </motion.button>
           </div>
         </motion.div>
