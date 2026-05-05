@@ -17,24 +17,9 @@ import ReactMarkdown from 'react-markdown';
 import { clayButton, slideUp, fadeUp } from './lib/animations';
 
 const ProtectedRoute = ({ children }) => {
-  const { isRegistered } = useUser();
-  const [session, setSession] = useState(undefined);
+  const { session, isRegistered, isLoading } = useUser();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (session === undefined) {
+  if (isLoading) {
     return null;
   }
 
@@ -50,15 +35,9 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const PublicRoute = ({ children }) => {
-  const [session, setSession] = useState(undefined);
+  const { session, isLoading } = useUser();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-  }, []);
-
-  if (session === undefined) return null;
+  if (isLoading) return null;
 
   if (session) return <Navigate to="/dashboard" replace />;
 

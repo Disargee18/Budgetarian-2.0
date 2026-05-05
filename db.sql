@@ -16,6 +16,7 @@ CREATE TABLE user_profiles (
   gender TEXT,
   activity_level TEXT,
   goal TEXT,
+  profile_picture_url TEXT,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id)
@@ -62,8 +63,8 @@ ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE meal_plans ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies (users can only access their own data)
-CREATE POLICY "Users can view own data" ON users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can view own profile" ON user_profiles FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own budget" ON user_budgets FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own preferences" ON user_preferences FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own meal plans" ON meal_plans FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view and manage own data" ON users FOR ALL USING (auth.uid() = id);
+CREATE POLICY "Users can view and manage own profile" ON user_profiles FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view and manage own budget" ON user_budgets FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view and manage own preferences" ON user_preferences FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can view and manage own meal plans" ON meal_plans FOR ALL USING (auth.uid() = user_id);
