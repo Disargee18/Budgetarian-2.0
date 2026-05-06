@@ -3,15 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../context/UserContext';
-import { Utensils } from 'lucide-react';
-import { clayButton, slideUp, fadeUp, blobFloat, blobFloatAlt, blobFloatSlow } from '../lib/animations';
-
-const ClayInput = (props) => (
-  <input
-    className="h-14 w-full rounded-claySm bg-[#EFEBF5] px-6 font-body text-base text-clay-fg shadow-clayPressed placeholder:text-clay-muted transition-all duration-200 focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#639922]/20"
-    {...props}
-  />
-);
+import { Utensils, Check } from 'lucide-react';
+import { fadeUp } from '../lib/animations';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -26,134 +19,83 @@ const Login = () => {
     e?.preventDefault();
     setLoading(true);
     setError('');
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    if (authError) {
+      setError(authError.message);
       setLoading(false);
       return;
     }
-
-    if (isRegistered) {
-      navigate('/dashboard');
-    } else {
-      navigate('/register');
-    }
+    if (isRegistered) navigate('/dashboard');
+    else navigate('/register');
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-clay-canvas p-4 overflow-hidden">
-      {/* Background Blobs */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <motion.div
-          variants={blobFloat}
-          animate="animate"
-          className="absolute -left-[10%] -top-[10%] h-[60vh] w-[60vh] rounded-full bg-[#3B6D11]/10 blur-3xl"
-        />
-        <motion.div
-          variants={blobFloatAlt}
-          animate="animate"
-          className="absolute -right-[10%] top-[20%] h-[50vh] w-[50vh] rounded-full bg-[#EF9F27]/10 blur-3xl"
-        />
-        <motion.div
-          variants={blobFloatSlow}
-          animate="animate"
-          className="absolute bottom-[5%] left-[10%] h-[45vh] w-[45vh] rounded-full bg-[#639922]/8 blur-3xl"
-        />
+    <div className="min-h-screen flex items-center justify-center bg-premium-bg p-4 relative overflow-hidden">
+      {/* Subtle Background */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-premium-emerald/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-premium-amber/10 blur-[120px] rounded-full" />
       </div>
 
-      <motion.div 
-        variants={slideUp} 
-        initial="hidden" 
-        animate="visible"
-        className="w-full max-w-md"
-      >
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#97C459] to-[#27500A] shadow-clayButton mb-4">
-            <Utensils className="h-8 w-8 text-white" />
+      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md z-10">
+        <div className="text-center mb-8">
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-premium-emerald to-premium-emerald-dark shadow-xl mb-4">
+            <Utensils className="h-8 w-8 text-premium-bg" />
           </div>
-          <h1 className="font-heading text-4xl font-black tracking-tight text-clay-primary">Budgetarian</h1>
-          <p className="font-body text-clay-muted mt-1">Smart meal planning on a budget</p>
+          <h1 className="font-heading text-3xl font-bold text-white mb-1">Budgetarian</h1>
+          <p className="text-xs text-premium-text-secondary uppercase tracking-widest font-medium">Culinary Intelligence</p>
         </div>
 
-        {/* Card */}
-        <div className="rounded-clayLg bg-white/65 p-8 md:p-10 shadow-clayCard backdrop-blur-xl">
-          <div className="text-center mb-8">
-            <h2 className="font-heading text-2xl font-bold text-clay-fg mb-1">Welcome Back</h2>
-            <p className="font-body text-sm text-clay-muted">Log in to continue your meal plan</p>
+        <div className="glass-card p-8 rounded-premium-lg">
+          <div className="mb-6 text-center sm:text-left">
+            <h2 className="text-xl font-bold text-white mb-1">Sign In</h2>
+            <p className="text-xs text-premium-text-muted">Enter your credentials to continue</p>
           </div>
 
           {error && (
-            <motion.div 
-              variants={fadeUp} 
-              initial="hidden" 
-              animate="visible"
-              className="mb-6 rounded-claySm bg-red-100 p-4 text-center font-body text-sm text-red-600"
-            >
+            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center text-[10px] font-bold text-red-400 uppercase tracking-widest">
               {error}
-            </motion.div>
+            </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div>
-              <label className="block font-body text-sm font-medium text-clay-muted mb-2">Email</label>
-              <ClayInput 
-                type="email" 
-                placeholder="you@example.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest ml-1">Email</label>
+              <input type="email" placeholder="name@email.com" className="h-12 w-full glass-input px-4 text-sm" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div>
-              <label className="block font-body text-sm font-medium text-clay-muted mb-2">Password</label>
-              <ClayInput 
-                type="password" 
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div className="space-y-1">
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest">Password</label>
+                <Link to="#" className="text-[10px] text-premium-emerald font-bold uppercase tracking-widest hover:text-white transition-colors">Forgot?</Link>
+              </div>
+              <input type="password" placeholder="••••••••" className="h-12 w-full glass-input px-4 text-sm" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 rounded border-gray-300 text-[#639922] focus:ring-[#639922]"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                <span className="font-body text-sm text-clay-muted">Remember me</span>
-              </label>
-              <a href="#" className="font-body text-sm text-[#639922] hover:underline">Forgot password?</a>
+            <div className="flex items-center gap-2 py-2">
+              <button type="button" onClick={() => setRememberMe(!rememberMe)} className="flex items-center gap-2 group">
+                <div className={`h-4 w-4 rounded border transition-all flex items-center justify-center ${rememberMe ? 'bg-premium-emerald border-premium-emerald' : 'bg-white/5 border-white/20'}`}>
+                  {rememberMe && <Check size={10} className="text-premium-bg" strokeWidth={4} />}
+                </div>
+                <span className="text-xs text-premium-text-secondary group-hover:text-white transition-colors">Remember me</span>
+              </button>
             </div>
 
-            <motion.button 
-              variants={clayButton} 
-              initial="rest" 
-              whileHover="hover" 
-              whileTap="tap" 
-              type="submit"
-              disabled={loading}
-              className="w-full h-14 rounded-claySm bg-gradient-to-br from-[#639922] to-[#27500A] px-6 font-heading font-bold tracking-wide text-white shadow-clayButton transition-shadow duration-200 hover:shadow-clayButtonHover disabled:opacity-70"
-            >
-              {loading ? 'Logging in...' : 'Log In'}
-            </motion.button>
+            <button type="submit" disabled={loading} className="w-full h-12 bg-premium-emerald text-premium-bg rounded-lg font-bold text-xs uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg">
+              {loading ? 'Authenticating...' : 'Sign In'}
+            </button>
           </form>
 
-          <p className="mt-8 text-center font-body text-sm text-clay-muted">
-            Don't have an account?{' '}
-            <Link to="/signup" className="font-bold text-[#639922] hover:underline">
-              Sign up
-            </Link>
-          </p>
+          <div className="mt-8 pt-6 border-t border-white/5 text-center">
+            <p className="text-xs text-premium-text-secondary">
+              New here?{' '}
+              <Link to="/signup" className="font-bold text-premium-emerald hover:text-white transition-colors">
+                Create Account
+              </Link>
+            </p>
+          </div>
         </div>
+        
+        <p className="mt-8 text-center text-[10px] text-premium-text-muted font-bold uppercase tracking-[0.3em]">Version 2.0</p>
       </motion.div>
     </div>
   );

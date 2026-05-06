@@ -1,9 +1,10 @@
 export const blobFloat = {
   animate: {
-    y: [0, -20, 0],
-    rotate: [0, 2, 0],
+    y: [0, -40, 0],
+    x: [0, 20, 0],
+    scale: [1, 1.1, 1],
     transition: {
-      duration: 8,
+      duration: 15,
       repeat: Infinity,
       ease: "easeInOut",
     },
@@ -12,10 +13,11 @@ export const blobFloat = {
 
 export const blobFloatAlt = {
   animate: {
-    y: [0, -15, 0],
-    rotate: [0, -2, 0],
+    y: [0, 40, 0],
+    x: [0, -20, 0],
+    scale: [1.1, 1, 1.1],
     transition: {
-      duration: 10,
+      duration: 18,
       repeat: Infinity,
       ease: "easeInOut",
       delay: 2,
@@ -25,8 +27,8 @@ export const blobFloatAlt = {
 
 export const blobFloatSlow = {
   animate: {
-    y: [0, -30, 0],
-    rotate: [0, 5, 0],
+    y: [0, -20, 0],
+    scale: [1, 1.05, 1],
     transition: {
       duration: 12,
       repeat: Infinity,
@@ -36,33 +38,41 @@ export const blobFloatSlow = {
   },
 };
 
-export const cardFloat = {
-  rest: { y: 0, boxShadow: "var(--shadow-clayCard)" },
+export const premiumCard = {
+  rest: { 
+    y: 0, 
+    scale: 1,
+    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.4)",
+    borderColor: "rgba(255, 255, 255, 0.08)"
+  },
   hover: {
     y: -8,
-    boxShadow: "var(--shadow-clayButtonHover)",
-    transition: { duration: 0.4, ease: "easeOut" },
+    scale: 1.01,
+    boxShadow: "0 20px 40px 0 rgba(0, 0, 0, 0.6)",
+    borderColor: "rgba(16, 185, 129, 0.3)",
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
-export const clayButton = {
-  rest: { scale: 1, y: 0 },
+export const premiumButton = {
+  rest: { scale: 1, filter: "brightness(1)" },
   hover: {
-    y: -4,
+    scale: 1.02,
+    filter: "brightness(1.1)",
+    boxShadow: "0 0 20px rgba(16, 185, 129, 0.3)",
     transition: { duration: 0.2, ease: "easeOut" },
   },
   tap: {
-    scale: 0.92,
-    y: 0,
+    scale: 0.95,
     transition: { duration: 0.1, ease: "easeIn" },
   },
 };
 
-export const breathe = {
+export const glow = {
   animate: {
-    scale: [1, 1.02, 1],
+    opacity: [0.4, 0.8, 0.4],
     transition: {
-      duration: 6,
+      duration: 4,
       repeat: Infinity,
       ease: "easeInOut",
     },
@@ -70,11 +80,11 @@ export const breathe = {
 };
 
 export const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" },
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
@@ -82,31 +92,31 @@ export const staggerContainer = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
 
 export const slideUp = {
-  hidden: { y: "100%", opacity: 0 },
+  hidden: { y: 100, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.35, ease: [0.32, 0.72, 0, 1] },
+    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
   },
   exit: {
-    y: "100%",
+    y: 50,
     opacity: 0,
-    transition: { duration: 0.25, ease: "easeIn" },
+    transition: { duration: 0.3, ease: "easeIn" },
   },
 };
 
 export const scaleIn = {
-  hidden: { scale: 0.8, opacity: 0 },
+  hidden: { scale: 0.95, opacity: 0 },
   visible: {
     scale: 1,
     opacity: 1,
-    transition: { duration: 0.3, ease: [0.34, 1.56, 0.64, 1] },
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
@@ -115,20 +125,29 @@ export const checkMark = {
   visible: {
     pathLength: 1,
     opacity: 1,
-    transition: { duration: 0.3, ease: "easeOut" },
+    transition: { duration: 0.4, ease: "easeOut" },
   },
 };
 
 export const pageTransition = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
+    transition: { duration: 0.5, ease: "easeOut" },
   },
   exit: {
     opacity: 0,
-    y: -16,
-    transition: { duration: 0.25, ease: "easeIn" },
+    transition: { duration: 0.3, ease: "easeIn" },
+  },
+};
+export const breathe = {
+  animate: {
+    scale: [1, 1.05, 1],
+    opacity: [0.8, 1, 0.8],
+    transition: {
+      duration: 4,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
   },
 };
