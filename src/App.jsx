@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageCircle, Send } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, BrainCircuit } from 'lucide-react';
 import { useUser } from './context/UserContext';
 import Layout from './components/Layout';
 import RegistrationWizard from './pages/RegistrationWizard';
@@ -14,7 +14,7 @@ import Signup from './pages/Signup';
 import { supabase } from './lib/supabaseClient';
 import { sendChatMessage } from './lib/openrouterClient';
 import ReactMarkdown from 'react-markdown';
-import { clayButton, slideUp, fadeUp } from './lib/animations';
+import { premiumCard, premiumButton, slideUp, fadeUp } from './lib/animations';
 
 const ProtectedRoute = ({ children }) => {
   const { session, isRegistered, isLoading } = useUser();
@@ -50,7 +50,7 @@ const Chatbot = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, role: 'assistant', content: 'Hi! I\'m your meal planning assistant. Ask me about budget-friendly meals, recipes, or nutrition advice!', timestamp: new Date() }
+    { id: 1, role: 'assistant', content: 'NutriPlan AI active. How can I help you today?', timestamp: new Date() }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +61,6 @@ const Chatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // Don't render chatbot if not logged in
   if (!isRegistered) return null;
 
   const toggleChat = () => setIsOpen(!isOpen);
@@ -91,7 +90,6 @@ const Chatbot = () => {
       const aiResponse = await sendChatMessage(apiMessages, userContext);
       let finalContent = aiResponse;
       
-      // Parse Actions
       const actionRegex = /\[ACTION:(.*?):(.*?)\]/g;
       let match;
       while ((match = actionRegex.exec(aiResponse)) !== null) {
@@ -107,7 +105,6 @@ const Chatbot = () => {
         }
       }
       
-      // Clean up response text for display
       finalContent = aiResponse.replace(actionRegex, '').trim();
 
       const assistantMessage = {
@@ -119,8 +116,7 @@ const Chatbot = () => {
 
       setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
-      setError('Failed to get response. Please try again.');
-      console.error('Chat error:', err);
+      setError('Communication error. Link unstable.');
     } finally {
       setIsLoading(false);
     }
@@ -135,97 +131,108 @@ const Chatbot = () => {
 
   return (
     <>
-      <motion.button
-        variants={clayButton}
-        initial="rest"
-        whileHover="hover"
-        whileTap="tap"
-        onClick={toggleChat}
-        className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#639922] to-[#27500A] shadow-clayButton focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#639922]/30"
-      >
-        <MessageCircle className="h-7 w-7 text-white" />
-      </motion.button>
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={toggleChat}
+            className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-50 flex h-14 w-14 lg:h-16 lg:w-16 items-center justify-center rounded-full bg-premium-emerald text-premium-bg shadow-xl hover:scale-110 transition-transform"
+          >
+            <MessageCircle size={24} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            variants={slideUp}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="fixed bottom-24 right-6 z-50 flex h-[520px] w-80 flex-col overflow-hidden rounded-clay rounded-br-[8px] bg-white/80 shadow-clayCard backdrop-blur-xl"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 sm:bottom-10 right-4 sm:right-8 lg:right-12 z-50 flex h-[500px] sm:h-[600px] w-[calc(100%-2rem)] sm:w-[380px] flex-col glass-card rounded-premium-lg border-white/10 shadow-2xl overflow-hidden"
           >
-            <div className="bg-gradient-to-r from-[#3B6D11] to-[#27500A] p-4">
-              <p className="font-heading font-bold text-white">NutriPlan AI</p>
-              <p className="font-body text-xs text-white/70">Your meal planning assistant</p>
+            {/* Header */}
+            <div className="p-6 border-b border-white/5 bg-white/5 backdrop-blur-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <div className="h-10 w-10 rounded-xl bg-premium-emerald/10 flex items-center justify-center">
+                    <BrainCircuit size={20} className="text-premium-emerald" />
+                 </div>
+                 <div>
+                    <h3 className="text-sm font-bold text-white">NutriPlan AI</h3>
+                    <div className="flex items-center gap-1.5">
+                       <span className="h-1.5 w-1.5 rounded-full bg-premium-emerald animate-pulse" />
+                       <span className="text-[8px] font-bold text-premium-text-muted uppercase tracking-widest">Online</span>
+                    </div>
+                 </div>
+              </div>
+              <button onClick={toggleChat} className="p-2 text-premium-text-muted hover:text-white transition-colors">
+                <X size={20} />
+              </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
               {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  variants={fadeUp}
-                  initial="hidden"
-                  animate="visible"
-                  className={`max-w-[80%] px-4 py-3 font-body text-sm ${msg.role === "user" ? "ml-auto rounded-[20px] rounded-br-[4px] bg-gradient-to-br from-[#639922] to-[#27500A] text-white" : "rounded-[20px] rounded-bl-[4px] bg-white shadow-clayCard text-clay-fg"}`}
-                >
-                  {msg.role === 'assistant' ? (
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-                        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                        em: ({ children }) => <em className="italic">{children}</em>,
-                        ul: ({ children }) => <ul className="ml-4 list-disc space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="ml-4 list-decimal space-y-1">{children}</ol>,
-                        li: ({ children }) => <li>{children}</li>,
-                        code: ({ children }) => <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-xs">{children}</code>,
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
-                  ) : (
-                    msg.content
-                  )}
-                </motion.div>
+                <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs leading-relaxed ${
+                    msg.role === "user" 
+                    ? "bg-premium-emerald text-premium-bg font-medium" 
+                    : "bg-white/5 border border-white/10 text-premium-text-secondary"
+                  }`}>
+                    {msg.role === 'assistant' ? (
+                      <ReactMarkdown
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                          strong:({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-premium-emerald">{children}</em>,
+                          ul: ({ children }) => <ul className="ml-4 list-disc space-y-1 mb-2">{children}</ul>,
+                          ol: ({ children }) => <ol className="ml-4 list-decimal space-y-1 mb-2">{children}</ol>,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                </div>
               ))}
               {isLoading && (
-                <motion.div
-                  variants={fadeUp}
-                  initial="hidden"
-                  animate="visible"
-                  className="max-w-[80%] px-4 py-3 font-body text-sm rounded-[20px] rounded-bl-[4px] bg-white shadow-clayCard text-clay-fg"
-                >
-                  <div className="typing-indicator">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <div className="flex justify-start">
+                  <div className="bg-white/5 px-4 py-3 rounded-2xl">
+                    <div className="flex gap-1">
+                      <span className="h-1 w-1 rounded-full bg-premium-emerald animate-bounce" />
+                      <span className="h-1 w-1 rounded-full bg-premium-emerald animate-bounce [animation-delay:0.2s]" />
+                      <span className="h-1 w-1 rounded-full bg-premium-emerald animate-bounce [animation-delay:0.4s]" />
+                    </div>
                   </div>
-                </motion.div>
-              )}
-              {error && (
-                <div className="mb-2 rounded-claySm bg-red-100 p-3 text-center font-body text-xs text-red-600">
-                  <p>{error}</p>
-                  <button onClick={() => setError(null)} className="mt-1 font-bold hover:underline">Dismiss</button>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
-            <div className="flex gap-2 border-t border-[#639922]/10 p-3">
-              <input
-                className="h-12 flex-1 rounded-claySm bg-[#EFEBF5] px-4 font-body text-sm text-clay-fg shadow-clayPressed placeholder:text-clay-muted focus:outline-none focus:ring-2 focus:ring-[#639922]/20 disabled:opacity-50"
-                placeholder="Ask about your meals..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                disabled={isLoading}
-              />
-              <motion.button
-                whileTap={{ scale: 0.88 }}
-                onClick={handleSendMessage}
-                disabled={isLoading}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#EF9F27] to-[#BA7517] shadow-clayButton disabled:opacity-50"
-              >
-                <Send className="h-5 w-5 text-white" />
-              </motion.button>
+
+            {/* Input */}
+            <div className="p-4 bg-white/5 border-t border-white/5">
+              <div className="relative">
+                <textarea
+                  rows="1"
+                  className="w-full h-12 glass-input pl-4 pr-12 pt-3.5 font-body text-xs resize-none"
+                  placeholder="Ask anything..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  disabled={isLoading}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isLoading}
+                  className="absolute right-2 top-2 h-8 w-8 flex items-center justify-center rounded-lg bg-premium-emerald text-premium-bg disabled:opacity-30"
+                >
+                  <Send size={14} />
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

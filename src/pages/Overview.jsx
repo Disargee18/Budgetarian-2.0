@@ -1,148 +1,137 @@
 import React from 'react';
 import { useUser } from '../context/UserContext';
-import { Camera, Edit3, Target, Activity, Flame, Lightbulb } from 'lucide-react';
+import { Edit3, Target, Activity, Flame, Lightbulb, User, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fadeUp, staggerContainer, breathe, cardFloat } from '../lib/animations';
+import { fadeUp, premiumCard, glow } from '../lib/animations';
 
 const Overview = () => {
   const { profile, metrics, budget, isLoading } = useUser();
 
   if (isLoading || !profile || !metrics) {
     return (
-      <div className="flex h-full min-h-[60vh] items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-[#639922]/20 border-t-[#639922]" />
-          <p className="font-body text-clay-muted">Loading your profile...</p>
-        </div>
+      <div className="flex flex-col h-full min-h-[60vh] items-center justify-center gap-4">
+        <div className="h-12 w-12 rounded-full border-2 border-premium-emerald/20 border-t-premium-emerald animate-spin" />
+        <p className="text-sm font-medium text-premium-text-secondary">Retrieving Biometrics...</p>
       </div>
     );
   }
 
-  const calculateBMI = () => {
+  const bmi = (() => {
     if (!metrics.height || !metrics.weight) return null;
     const heightInMeters = parseFloat(metrics.height) / 100;
     const weightInKg = parseFloat(metrics.weight);
     return (weightInKg / (heightInMeters * heightInMeters)).toFixed(1);
-  };
+  })();
 
   const getBMIGradient = (bmi) => {
-    if (!bmi) return "from-[#97C459] to-[#27500A]";
-    if (bmi < 18.5) return "from-[#EF9F27] to-[#BA7517]";
-    if (bmi < 25) return "from-[#97C459] to-[#27500A]";
-    if (bmi < 30) return "from-[#EF9F27] to-[#BA7517]";
-    return "from-[#D32F2F] to-[#851D1D]";
+    if (!bmi) return "from-premium-emerald to-premium-emerald-dark";
+    if (bmi < 18.5) return "from-premium-amber to-premium-amber-dark";
+    if (bmi < 25) return "from-premium-emerald to-premium-emerald-dark";
+    return "from-premium-amber to-red-500";
   };
 
-  const bmi = calculateBMI();
-
   return (
-    <div className="space-y-8">
-      <header className="mb-8">
-        <h2 className="font-heading text-4xl md:text-5xl font-extrabold text-clay-fg tracking-tight">
-          Your Profile
-        </h2>
+    <div className="space-y-8 pb-20 lg:pb-0">
+      <header>
+        <h2 className="font-heading text-3xl font-bold text-white mb-2">Member Core</h2>
+        <p className="text-sm text-premium-text-secondary font-medium uppercase tracking-widest">Physiological Profile</p>
       </header>
 
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 gap-6 md:grid-cols-3"
-      >
-        {/* Hero Profile Card */}
-        <motion.div variants={fadeUp} className="md:col-span-2">
-          <div className="rounded-clayLg bg-white/65 p-8 md:p-10 shadow-clayCard backdrop-blur-xl h-full flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#97C459]/10 blur-2xl"></div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        {/* Profile Card */}
+        <div className="lg:col-span-8">
+          <div className="glass-card p-6 sm:p-10 rounded-premium-lg flex flex-col sm:flex-row gap-8 relative overflow-hidden h-full">
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-premium-emerald/5 blur-[60px]" />
             
-            <div className="relative flex h-32 w-32 shrink-0 items-center justify-center rounded-full border-4 border-[#639922]/20 shadow-clayButton bg-gradient-to-br from-[#639922] to-[#27500A] text-white">
+            <div className="relative flex h-32 w-32 sm:h-40 sm:w-40 shrink-0 items-center justify-center rounded-premium border-2 border-premium-emerald/30 bg-premium-bg overflow-hidden mx-auto sm:mx-0 shadow-lg">
               {profile.photo ? (
-                <img src={profile.photo} alt={profile.name} className="h-full w-full rounded-full object-cover" />
+                <img src={profile.photo} alt={profile.name} className="h-full w-full object-cover" />
               ) : (
-                <span className="font-heading text-4xl font-black">{profile.name.charAt(0)}</span>
+                <span className="font-heading text-5xl font-bold text-premium-emerald/30">{profile.name.charAt(0)}</span>
               )}
             </div>
 
-            <div className="flex-1 text-center md:text-left z-10">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
-                <h3 className="font-heading text-3xl font-black text-clay-fg">{profile.name}</h3>
-                <motion.button whileTap={{ scale: 0.9 }} className="flex items-center justify-center gap-2 rounded-full bg-[#EFEBF5] px-4 py-2 font-body text-sm font-medium text-clay-muted shadow-clayPressed hover:bg-white transition-colors self-center md:self-auto">
-                  <Edit3 size={16} /> Edit
-                </motion.button>
+            <div className="flex-1 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <h3 className="font-heading text-2xl font-bold text-white mb-1">{profile.name}</h3>
+                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-premium-emerald shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <p className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest">Identity Verified</p>
+                  </div>
+                </div>
+                <button className="flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-[10px] font-bold text-premium-text-secondary hover:text-white transition-all w-full sm:w-auto">
+                  <Edit3 size={12} /> Update Data
+                </button>
               </div>
               
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
-                <span className="rounded-full bg-gradient-to-br from-[#EF9F27] to-[#BA7517] px-4 py-1.5 font-body text-sm font-bold text-white shadow-clayButton flex items-center gap-2">
-                  <Target size={16} /> {metrics.goal}
-                </span>
-                <span className="rounded-full bg-white/80 px-4 py-1.5 font-body text-sm font-medium text-clay-muted shadow-clayCard">
-                  {profile.age} years old
-                </span>
-                <span className="rounded-full bg-white/80 px-4 py-1.5 font-body text-sm font-medium text-clay-muted shadow-clayCard">
-                  {profile.gender}
-                </span>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <div className="flex items-center gap-2 rounded-full bg-premium-amber/5 border border-premium-amber/10 px-4 py-1.5">
+                  <Target size={12} className="text-premium-amber" />
+                  <span className="text-[10px] font-bold text-white uppercase tracking-wider">{metrics.goal}</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/5 px-4 py-1.5">
+                  <Clock size={12} className="text-premium-text-muted" />
+                  <span className="text-[10px] font-bold text-premium-text-secondary uppercase tracking-wider">{profile.age} Yrs</span>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/5 px-4 py-1.5">
+                  <User size={12} className="text-premium-text-muted" />
+                  <span className="text-[10px] font-bold text-premium-text-secondary uppercase tracking-wider">{profile.gender}</span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="font-body text-xs text-clay-muted mb-1">Height</p>
-                  <p className="font-heading text-xl font-bold text-clay-fg">{metrics.height} cm</p>
-                </div>
-                <div>
-                  <p className="font-body text-xs text-clay-muted mb-1">Weight</p>
-                  <p className="font-heading text-xl font-bold text-clay-fg">{metrics.weight} kg</p>
-                </div>
-                <div>
-                  <p className="font-body text-xs text-clay-muted mb-1">Budget</p>
-                  <p className="font-heading text-xl font-bold text-clay-fg">{budget.currency}{budget.weekly}</p>
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+                {[
+                  { label: "Height", value: `${metrics.height} cm` },
+                  { label: "Weight", value: `${metrics.weight} kg` },
+                  { label: "Weekly Budget", value: `${budget.currency}${budget.weekly}` },
+                  { label: "Daily Limit", value: `${budget.currency}${(budget.weekly / 7).toFixed(0)}` },
+                ].map((stat, i) => (
+                  <div key={i} className="text-center sm:text-left">
+                    <p className="text-[8px] font-bold text-premium-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
+                    <p className="font-heading text-lg font-bold text-white">{stat.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* BMI Orb Card */}
-        <motion.div variants={fadeUp} className="md:col-span-1">
-          <div className="rounded-clay bg-white/65 p-8 shadow-clayCard backdrop-blur-xl h-full flex flex-col items-center justify-center text-center">
-            <h3 className="font-heading text-xl font-bold text-clay-fg mb-6">Body Mass Index</h3>
+        {/* BMI Card */}
+        <div className="lg:col-span-4">
+          <div className="glass-card p-6 sm:p-10 rounded-premium-lg h-full flex flex-col items-center justify-center text-center relative overflow-hidden">
+            <h3 className="text-sm font-bold text-white mb-8 uppercase tracking-widest">Metabolic Index</h3>
             {bmi && (
-              <motion.div
-                variants={breathe}
-                animate="animate"
-                className={`flex h-40 w-40 flex-col items-center justify-center rounded-full bg-gradient-to-br ${getBMIGradient(bmi)} shadow-clayButton mb-6`}
-              >
-                <span className="font-heading text-4xl font-black text-white">{bmi}</span>
-                <span className="font-body text-sm font-medium text-white/80">BMI</span>
-              </motion.div>
+              <div className={`flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br ${getBMIGradient(bmi)} shadow-xl mb-8 relative border-4 border-white/10`}>
+                <span className="font-heading text-4xl font-bold text-premium-bg">{bmi}</span>
+                <span className="text-[8px] font-bold text-premium-bg/70 uppercase tracking-widest mt-1">BMI Value</span>
+              </div>
             )}
-            <p className="font-body text-sm text-clay-muted">Your BMI is currently in the <strong className="text-clay-fg">{bmi < 25 ? 'Healthy' : 'Overweight'}</strong> range.</p>
+            <p className="text-xs text-premium-text-secondary leading-relaxed">
+              System category: <span className="font-bold text-white uppercase">{bmi < 25 ? 'Optimal' : 'Elevated'}</span>.
+            </p>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Stat Cards */}
+        {/* Analytic Cards */}
         {[
-          { label: 'Activity Level', value: metrics.activity, icon: Activity, color: 'text-[#27500A]', bg: 'bg-[#639922]/15' },
-          { label: 'Weekly Meals', value: '21 scheduled', icon: Flame, color: 'text-[#BA7517]', bg: 'bg-[#EF9F27]/15' },
-          { label: 'Dietary Prefs', value: 'Vegetarian', icon: Lightbulb, color: 'text-[#27500A]', bg: 'bg-[#639922]/15' }
+          { label: 'Activity Level', value: metrics.activity, icon: Activity, accent: 'text-premium-emerald', bg: 'bg-premium-emerald/5' },
+          { label: 'Weekly Intensity', value: '21 Meals', icon: Flame, accent: 'text-premium-amber', bg: 'bg-premium-amber/5' },
+          { label: 'System Authority', value: 'NutriPlan v2.0', icon: Lightbulb, accent: 'text-premium-emerald', bg: 'bg-premium-emerald/5' }
         ].map((stat, idx) => (
-          <motion.div key={idx} variants={fadeUp}>
-            <motion.div 
-              variants={cardFloat} 
-              initial="rest" 
-              whileHover="hover"
-              className="rounded-clay bg-white/65 p-6 shadow-clayCard backdrop-blur-xl flex items-center gap-4"
-            >
-              <div className={`flex h-14 w-14 items-center justify-center rounded-full ${stat.bg}`}>
-                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+          <div key={idx} className="lg:col-span-4">
+            <div className="glass-card p-6 rounded-premium-lg flex items-center gap-4 transition-all hover:bg-white/5 border-white/5">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-lg border border-white/10 ${stat.bg}`}>
+                <stat.icon className={`h-5 w-5 ${stat.accent}`} />
               </div>
               <div>
-                <p className="font-body text-sm text-clay-muted mb-1">{stat.label}</p>
-                <p className="font-heading text-lg font-bold text-clay-fg">{stat.value}</p>
+                <p className="text-[8px] font-bold text-premium-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="font-heading text-base font-bold text-white">{stat.value}</p>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         ))}
-
-      </motion.div>
+      </div>
     </div>
   );
 };
