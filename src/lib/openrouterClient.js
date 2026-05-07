@@ -29,11 +29,11 @@ User Context:
 - Health Conditions: ${userContext.healthConditions || 'None'}
 
 Current Meal Plan Summary:
-${userContext.mealPlan && Object.keys(userContext.mealPlan).length > 0 
-  ? Object.entries(userContext.mealPlan).map(([day, meals]) => 
-      `${day}: ${Object.entries(meals).map(([type, meal]) => `${type}: ${meal.name} (${meal.cals}kcal, ${userContext.budget?.currency || '₱'}${meal.cost})`).join(', ')}`
-    ).join('\n')
-  : 'No meal plan generated yet'}
+${userContext.mealPlan && Object.keys(userContext.mealPlan).length > 0
+                ? Object.entries(userContext.mealPlan).map(([day, meals]) =>
+                  `${day}: ${Object.entries(meals).map(([type, meal]) => `${type}: ${meal.name} (${meal.cals}kcal, ${userContext.budget?.currency || '₱'}${meal.cost})`).join(', ')}`
+                ).join('\n')
+                : 'No meal plan generated yet'}
 
 Special Capabilities:
 You can trigger app actions by including special tags at the END of your response. 
@@ -57,7 +57,7 @@ You have full access to the user's data. Use it for personalized advice. Keep re
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
-    
+
     // Robust JSON parsing: strip markdown code blocks if present
     const cleanJson = aiResponse.replace(/```json|```/g, '').trim();
     return cleanJson;
@@ -77,7 +77,15 @@ export async function generateMealPlanAI(userContext) {
 - Activity Level: ${userContext.metrics?.activity}
 - Weight: ${userContext.metrics?.weight}kg, Height: ${userContext.metrics?.height}cm
 
-The output MUST be a valid JSON object matching this structure and must give ONLY famous Filipino foods:
+You are a Filipino nutrition assistant. Your role is to generate a weekly healthy Filipino meal plan.
+
+STRICT RULES:
+- Only include FAMOUS, AUTHENTIC Filipino dishes.
+- Meals must be genuinely healthy — low in sodium, low in saturated fat, high in vegetables and lean protein.
+- Every suggestion must be appropriate for its specific meal time (Breakfast, Lunch, Dinner, Snacks).
+- Vary dishes across days. Do NOT repeat the same dish more than once per week.
+- All nutritional values must be realistic and accurate.
+
 {
   "Monday": {
     "Breakfast": { "name": "...", "type": "Breakfast", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." },
@@ -119,7 +127,7 @@ Ensure the total weekly cost is within the budget and meals are appropriate for 
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    
+
     // Robust JSON extraction: find the first '{' and last '}'
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -151,7 +159,14 @@ The output MUST be a valid JSON object for this SPECIFIC DAY ONLY matching this 
   "Snacks": { "name": "...", "type": "Snack", "cals": 0, "protein": 0, "cost": 0, "tags": ["...", "..."], "description": "..." }
 }
 
-Ensure the cost is within a reasonable daily portion of the weekly budget and meals are appropriate. Return ONLY the JSON object.`;
+You are a Filipino nutrition assistant. Your role is to generate a daily healthy Filipino meal plan.
+
+STRICT RULES:
+- Only include FAMOUS, AUTHENTIC Filipino dishes.
+- Meals must be genuinely healthy — low in sodium, low in saturated fat, high in vegetables and lean protein.
+- Every suggestion must be appropriate for its specific meal time.
+
+Ensure the cost is within a reasonable daily portion of the weekly budget and meals are appropriate for the health goals and conditions. Return ONLY the JSON object.`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -182,7 +197,7 @@ Ensure the cost is within a reasonable daily portion of the weekly budget and me
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    
+
     // Robust JSON extraction: find the first '{' and last '}'
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
