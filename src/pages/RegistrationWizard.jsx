@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { generateWeeklyPlan } from '../lib/mealGenerator';
-import { generateDailyMealPlanAI } from '../lib/openrouterClient';
+import { generateMealPlanAI } from '../lib/openrouterClient';
 import { Camera, Check, Activity, Target, Zap, Heart, Scale, Flame, User, ChevronRight, ChevronLeft } from 'lucide-react';
 import { PRESET_AVATARS } from '../lib/avatars';
 import { ClayCard, ClayButton, ClayInput, ClayBadge } from '../components/ClayComponents';
@@ -105,11 +104,11 @@ const RegistrationWizard = () => {
       };
       const userId = await completeRegistration(userData);
       try {
-        const plan = await generateDailyMealPlanAI(userData, 'Monday'); // Initial generation
-        await updateMealPlan({ 'Monday': plan }, userId);
-      } catch (e) {
-        const { plan } = generateWeeklyPlan(userData);
+        const plan = await generateMealPlanAI(userData);
         await updateMealPlan(plan, userId);
+      } catch (e) {
+        console.error("Failed to generate initial plan:", e);
+        await updateMealPlan({}, userId);
       }
       navigate('/dashboard');
     } catch (err) {

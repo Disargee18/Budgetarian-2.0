@@ -3,8 +3,7 @@ import { useUser } from '../context/UserContext';
 import { Check, RotateCcw, Lightbulb, Activity, Utensils, Target, Flame, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClayCard, ClayButton, ClayBadge, ClayProgressBar } from '../components/ClayComponents';
-import { generateWeeklyPlan } from '../lib/mealGenerator';
-import { generateDailyMealPlanAI } from '../lib/openrouterClient';
+import { generateMealPlanAI, generateDailyMealPlanAI } from '../lib/openrouterClient';
 
 const MealChecklistRow = ({ id, mealName, calories, protein, cost, tags, checked, toggle, disabled }) => (
   <motion.div
@@ -162,10 +161,11 @@ const Dashboard = () => {
               setIsRegenerating(true);
               try {
                 const userData = { profile, metrics, budget, preferences, allergies, healthConditions };
-                let plan;
-                try { plan = await generateMealPlanAI(userData); }
-                catch (e) { plan = generateWeeklyPlan(userData).plan; }
+                const plan = await generateMealPlanAI(userData);
                 await updateMealPlan(plan);
+              } catch (e) {
+                console.error("Failed to generate AI plan:", e);
+                alert("Failed to generate meal plan. Please try again.");
               } finally { setIsRegenerating(false); }
             }}
             disabled={isRegenerating}
