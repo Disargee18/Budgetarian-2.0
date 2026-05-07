@@ -2,16 +2,18 @@ import React from 'react';
 import { useUser } from '../context/UserContext';
 import { Edit3, Target, Activity, Flame, Lightbulb, User, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fadeUp, premiumCard, glow } from '../lib/animations';
+import { ClayCard, ClayBadge, ClayButton } from '../components/ClayComponents';
 
 const Overview = () => {
   const { profile, metrics, budget, isLoading } = useUser();
 
   if (isLoading || !profile || !metrics) {
     return (
-      <div className="flex flex-col h-full min-h-[60vh] items-center justify-center gap-4">
-        <div className="h-12 w-12 rounded-full border-2 border-premium-emerald/20 border-t-premium-emerald animate-spin" />
-        <p className="text-sm font-medium text-premium-text-secondary">Retrieving Biometrics...</p>
+      <div className="flex flex-col h-full min-h-[50vh] items-center justify-center gap-4">
+        <div className="h-12 w-12 rounded-full bg-white shadow-clayCard flex items-center justify-center border border-clay-border">
+          <div className="h-8 w-8 rounded-full border-2 border-clay-green/20 border-t-clay-green animate-spin" />
+        </div>
+        <p className="text-sm font-bold text-clay-muted">Retrieving data...</p>
       </div>
     );
   }
@@ -23,112 +25,99 @@ const Overview = () => {
     return (weightInKg / (heightInMeters * heightInMeters)).toFixed(1);
   })();
 
-  const getBMIGradient = (bmi) => {
-    if (!bmi) return "from-premium-emerald to-premium-emerald-dark";
-    if (bmi < 18.5) return "from-premium-amber to-premium-amber-dark";
-    if (bmi < 25) return "from-premium-emerald to-premium-emerald-dark";
-    return "from-premium-amber to-red-500";
-  };
-
   return (
     <div className="space-y-8 pb-20 lg:pb-0">
       <header>
-        <h2 className="font-heading text-3xl font-bold text-white mb-2">Member Core</h2>
-        <p className="text-sm text-premium-text-secondary font-medium uppercase tracking-widest">Physiological Profile</p>
+        <h2 className="text-3xl font-black text-clay-foreground mb-1">Profile</h2>
+        <p className="text-[10px] text-clay-muted font-bold uppercase tracking-widest">Personal Overview</p>
       </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Profile Card */}
         <div className="lg:col-span-8">
-          <div className="glass-card p-6 sm:p-10 rounded-premium-lg flex flex-col sm:flex-row gap-8 relative overflow-hidden h-full">
-            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-premium-emerald/5 blur-[60px]" />
+          <ClayCard className="p-6 sm:p-8 flex flex-col sm:flex-row gap-6 relative overflow-hidden h-full bg-white/80">
+            <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-clay-accent/5 blur-2xl" />
             
-            <div className="relative flex h-32 w-32 sm:h-40 sm:w-40 shrink-0 items-center justify-center rounded-premium border-2 border-premium-emerald/30 bg-premium-bg overflow-hidden mx-auto sm:mx-0 shadow-lg">
+            <div className="relative flex h-28 w-28 sm:h-32 sm:w-32 shrink-0 items-center justify-center rounded-[20px] border-4 border-white bg-clay-canvas overflow-hidden mx-auto sm:mx-0 shadow-clayCard">
               {profile.photo ? (
                 <img src={profile.photo} alt={profile.name} className="h-full w-full object-cover" />
               ) : (
-                <span className="font-heading text-5xl font-bold text-premium-emerald/30">{profile.name.charAt(0)}</span>
+                <span className="text-5xl font-black text-clay-muted/20">{profile.name.charAt(0)}</span>
               )}
             </div>
 
-            <div className="flex-1 space-y-6">
+            <div className="flex-1 space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="text-center sm:text-left">
-                  <h3 className="font-heading text-2xl font-bold text-white mb-1">{profile.name}</h3>
+                  <h3 className="text-2xl font-black text-clay-foreground mb-1">{profile.name}</h3>
                   <div className="flex items-center justify-center sm:justify-start gap-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-premium-emerald shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                    <p className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest">Identity Verified</p>
+                    <div className="h-1.5 w-1.5 rounded-full bg-clay-green shadow-[0_0_6px_rgba(22,163,74,0.4)]" />
+                    <p className="text-[9px] font-black text-clay-muted uppercase tracking-widest">Active</p>
                   </div>
                 </div>
-                <button className="flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-[10px] font-bold text-premium-text-secondary hover:text-white transition-all w-full sm:w-auto">
-                  <Edit3 size={12} /> Update Data
-                </button>
+                <ClayButton variant="ghost" size="sm" className="w-full sm:w-auto h-9">
+                  <Edit3 size={12} className="mr-1.5" /> Edit
+                </ClayButton>
               </div>
               
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <div className="flex items-center gap-2 rounded-full bg-premium-amber/5 border border-premium-amber/10 px-4 py-1.5">
-                  <Target size={12} className="text-premium-amber" />
-                  <span className="text-[10px] font-bold text-white uppercase tracking-wider">{metrics.goal}</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/5 px-4 py-1.5">
-                  <Clock size={12} className="text-premium-text-muted" />
-                  <span className="text-[10px] font-bold text-premium-text-secondary uppercase tracking-wider">{profile.age} Yrs</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-white/5 border border-white/5 px-4 py-1.5">
-                  <User size={12} className="text-premium-text-muted" />
-                  <span className="text-[10px] font-bold text-premium-text-secondary uppercase tracking-wider">{profile.gender}</span>
-                </div>
+                <ClayBadge variant="amber">{metrics.goal}</ClayBadge>
+                <ClayBadge variant="primary">{profile.age} Yrs</ClayBadge>
+                <ClayBadge variant="sky">{profile.gender}</ClayBadge>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-clay-border">
                 {[
-                  { label: "Height", value: `${metrics.height} cm` },
-                  { label: "Weight", value: `${metrics.weight} kg` },
-                  { label: "Weekly Budget", value: `${budget.currency}${budget.weekly}` },
-                  { label: "Daily Limit", value: `${budget.currency}${(budget.weekly / 7).toFixed(0)}` },
+                  { label: "Height", value: `${metrics.height}cm` },
+                  { label: "Weight", value: `${metrics.weight}kg` },
+                  { label: "Weekly", value: `${budget.currency}${budget.weekly}` },
+                  { label: "Daily", value: `${budget.currency}${(budget.weekly / 7).toFixed(0)}` },
                 ].map((stat, i) => (
                   <div key={i} className="text-center sm:text-left">
-                    <p className="text-[8px] font-bold text-premium-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
-                    <p className="font-heading text-lg font-bold text-white">{stat.value}</p>
+                    <p className="text-[9px] font-black text-clay-muted uppercase tracking-widest mb-1">{stat.label}</p>
+                    <p className="text-base font-black text-clay-foreground">{stat.value}</p>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          </ClayCard>
         </div>
 
         {/* BMI Card */}
         <div className="lg:col-span-4">
-          <div className="glass-card p-6 sm:p-10 rounded-premium-lg h-full flex flex-col items-center justify-center text-center relative overflow-hidden">
-            <h3 className="text-sm font-bold text-white mb-8 uppercase tracking-widest">Metabolic Index</h3>
+          <ClayCard className="p-6 sm:p-8 h-full flex flex-col items-center justify-center text-center bg-white/80">
+            <h3 className="text-[10px] font-black text-clay-muted mb-6 uppercase tracking-widest">BMI Index</h3>
             {bmi && (
-              <div className={`flex h-36 w-36 flex-col items-center justify-center rounded-full bg-gradient-to-br ${getBMIGradient(bmi)} shadow-xl mb-8 relative border-4 border-white/10`}>
-                <span className="font-heading text-4xl font-bold text-premium-bg">{bmi}</span>
-                <span className="text-[8px] font-bold text-premium-bg/70 uppercase tracking-widest mt-1">BMI Value</span>
+              <div className="relative flex h-32 w-32 items-center justify-center mb-6">
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-br opacity-15 blur-xl ${bmi < 25 ? 'from-clay-green to-clay-emerald' : 'from-clay-amber to-clay-red'}`} />
+                <div className="relative flex h-28 w-28 flex-col items-center justify-center rounded-full bg-white shadow-clayCard border border-clay-border">
+                  <span className="text-3xl font-black text-clay-foreground">{bmi}</span>
+                  <span className="text-[9px] font-black text-clay-muted uppercase tracking-widest mt-0.5">Value</span>
+                </div>
               </div>
             )}
-            <p className="text-xs text-premium-text-secondary leading-relaxed">
-              System category: <span className="font-bold text-white uppercase">{bmi < 25 ? 'Optimal' : 'Elevated'}</span>.
+            <p className="text-xs text-clay-muted font-medium">
+              Status: <span className={`font-black uppercase ${bmi < 25 ? 'text-clay-green' : 'text-clay-amber'}`}>{bmi < 25 ? 'Optimal' : 'Elevated'}</span>
             </p>
-          </div>
+          </ClayCard>
         </div>
 
         {/* Analytic Cards */}
         {[
-          { label: 'Activity Level', value: metrics.activity, icon: Activity, accent: 'text-premium-emerald', bg: 'bg-premium-emerald/5' },
-          { label: 'Weekly Intensity', value: '21 Meals', icon: Flame, accent: 'text-premium-amber', bg: 'bg-premium-amber/5' },
-          { label: 'System Authority', value: 'NutriPlan v2.0', icon: Lightbulb, accent: 'text-premium-emerald', bg: 'bg-premium-emerald/5' }
+          { label: 'Activity', value: metrics.activity, icon: Activity },
+          { label: 'Intensity', value: '21 Meals', icon: Flame },
+          { label: 'System', value: 'v2.0 Stable', icon: Lightbulb }
         ].map((stat, idx) => (
           <div key={idx} className="lg:col-span-4">
-            <div className="glass-card p-6 rounded-premium-lg flex items-center gap-4 transition-all hover:bg-white/5 border-white/5">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-lg border border-white/10 ${stat.bg}`}>
-                <stat.icon className={`h-5 w-5 ${stat.accent}`} />
+            <ClayCard className="p-5 flex items-center gap-4 bg-white/70">
+              <div className="flex h-11 w-11 items-center justify-center rounded-clay-sm bg-white shadow-clayButton border border-clay-border">
+                <stat.icon className="h-5 w-5 text-clay-accent" />
               </div>
               <div>
-                <p className="text-[8px] font-bold text-premium-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className="font-heading text-base font-bold text-white">{stat.value}</p>
+                <p className="text-[9px] font-black text-clay-muted uppercase tracking-widest mb-0.5">{stat.label}</p>
+                <p className="text-base font-black text-clay-foreground">{stat.value}</p>
               </div>
-            </div>
+            </ClayCard>
           </div>
         ))}
       </div>

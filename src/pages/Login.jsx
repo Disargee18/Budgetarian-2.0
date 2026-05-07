@@ -1,101 +1,100 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Lock, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { useUser } from '../context/UserContext';
-import { Utensils, Check } from 'lucide-react';
-import { fadeUp } from '../lib/animations';
+import { BudgetarianLogo } from '../components/BudgetarianLogo';
+import { ClayCard, ClayButton, ClayInput } from '../components/ClayComponents';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { isRegistered } = useUser();
 
   const handleLogin = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
     setLoading(true);
     setError('');
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
       setError(authError.message);
       setLoading(false);
-      return;
+    } else {
+      navigate('/dashboard');
     }
-    if (isRegistered) navigate('/dashboard');
-    else navigate('/register');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-premium-bg p-4 relative overflow-hidden">
-      {/* Subtle Background */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-premium-emerald/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-premium-amber/10 blur-[120px] rounded-full" />
+    <div className="min-h-screen flex items-center justify-center bg-clay-canvas p-6 relative overflow-hidden">
+      {/* Background Blobs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
+        <div className="absolute -top-[10%] -left-[10%] h-[50vh] w-[50vh] rounded-full bg-[#8B5CF6]/10 blur-3xl animate-clay-float" />
+        <div className="absolute -right-[10%] top-[20%] h-[40vh] w-[40vh] rounded-full bg-[#EC4899]/10 blur-3xl animate-clay-float-delayed" />
+        <div className="absolute bottom-[5%] left-[30%] h-[30vh] w-[30vh] rounded-full bg-[#0EA5E9]/10 blur-3xl animate-clay-float-slow" />
       </div>
 
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="w-full max-w-md z-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-[380px] z-10"
+      >
         <div className="text-center mb-8">
-          <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-premium-emerald to-premium-emerald-dark shadow-xl mb-4">
-            <Utensils className="h-8 w-8 text-premium-bg" />
+          <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] bg-white shadow-clayCard border border-clay-border mb-5 animate-clay-breathe">
+            <BudgetarianLogo size="medium" />
           </div>
-          <h1 className="font-heading text-3xl font-bold text-white mb-1">Budgetarian</h1>
-          <p className="text-xs text-premium-text-secondary uppercase tracking-widest font-medium">Culinary Intelligence</p>
+          <h1 className="text-3xl font-extrabold text-clay-foreground mb-1">
+            Budget<span className="text-clay-green">arian</span>
+          </h1>
+          <p className="text-[9px] sm:text-[10px] text-clay-green uppercase tracking-[0.2em] sm:tracking-[0.3em] font-black mt-1 whitespace-nowrap">Smart Meal Planning</p>
         </div>
 
-        <div className="glass-card p-8 rounded-premium-lg">
+        <ClayCard className="p-8 bg-white/80">
           <div className="mb-6 text-center sm:text-left">
-            <h2 className="text-xl font-bold text-white mb-1">Sign In</h2>
-            <p className="text-xs text-premium-text-muted">Enter your credentials to continue</p>
+            <h2 className="text-xl font-black text-clay-foreground mb-1">Sign In</h2>
+            <p className="text-xs text-clay-muted font-medium">Welcome back to your companion.</p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center text-[10px] font-bold text-red-400 uppercase tracking-widest">
+            <div className="mb-6 p-4 rounded-clay-sm bg-clay-red/5 border border-clay-red/10 text-center text-[9px] font-black text-clay-red uppercase tracking-widest">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest ml-1">Email</label>
-              <input type="email" placeholder="name@email.com" className="h-12 w-full glass-input px-4 text-sm" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-black text-clay-muted uppercase tracking-widest ml-1.5">Email</label>
+              <ClayInput type="email" placeholder="name@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-bold text-premium-text-muted uppercase tracking-widest">Password</label>
-                <Link to="#" className="text-[10px] text-premium-emerald font-bold uppercase tracking-widest hover:text-white transition-colors">Forgot?</Link>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center px-1.5">
+                <label className="text-[9px] font-black text-clay-muted uppercase tracking-widest">Password</label>
+                <Link to="#" className="text-[9px] font-black text-clay-accent uppercase tracking-widest hover:underline">Forgot?</Link>
               </div>
-              <input type="password" placeholder="••••••••" className="h-12 w-full glass-input px-4 text-sm" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <ClayInput type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
 
-            <div className="flex items-center gap-2 py-2">
-              <button type="button" onClick={() => setRememberMe(!rememberMe)} className="flex items-center gap-2 group">
-                <div className={`h-4 w-4 rounded border transition-all flex items-center justify-center ${rememberMe ? 'bg-premium-emerald border-premium-emerald' : 'bg-white/5 border-white/20'}`}>
-                  {rememberMe && <Check size={10} className="text-premium-bg" strokeWidth={4} />}
-                </div>
-                <span className="text-xs text-premium-text-secondary group-hover:text-white transition-colors">Remember me</span>
-              </button>
-            </div>
-
-            <button type="submit" disabled={loading} className="w-full h-12 bg-premium-emerald text-premium-bg rounded-lg font-bold text-xs uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg">
-              {loading ? 'Authenticating...' : 'Sign In'}
-            </button>
+            <ClayButton
+              type="submit"
+              disabled={loading}
+              variant="primary"
+              className="w-full h-12 mt-4"
+            >
+              {loading ? 'Entering...' : 'Sign In'}
+            </ClayButton>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/5 text-center">
-            <p className="text-xs text-premium-text-secondary">
+          <div className="mt-8 pt-6 border-t border-clay-border text-center">
+            <p className="text-xs text-clay-muted font-medium">
               New here?{' '}
-              <Link to="/signup" className="font-bold text-premium-emerald hover:text-white transition-colors">
+              <Link to="/signup" className="font-black text-clay-accent hover:text-clay-accent-alt transition-colors">
                 Create Account
               </Link>
             </p>
           </div>
-        </div>
-        
-        <p className="mt-8 text-center text-[10px] text-premium-text-muted font-bold uppercase tracking-[0.3em]">Version 2.0</p>
+        </ClayCard>
       </motion.div>
     </div>
   );
