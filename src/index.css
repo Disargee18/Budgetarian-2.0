@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,84 +6,82 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
-    --app-padding: clamp(1.5rem, 5vw, 3rem);
+    --clay-canvas: #F4F1FA;
+    --app-padding: clamp(1rem, 3vw, 2rem);
   }
   
   body {
-    @apply bg-black text-premium-text-primary font-body antialiased;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.02) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.02) 0px, transparent 50%);
+    @apply bg-clay-canvas text-clay-foreground font-body antialiased tracking-tight;
     background-attachment: fixed;
-    font-size: 16px;
+    font-size: 14px;
     overflow-x: hidden;
   }
 
   html {
-    @apply bg-black;
+    @apply bg-clay-canvas;
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading tracking-tight text-white;
+    @apply font-heading tracking-tight text-clay-foreground;
   }
 
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-black;
+    @apply bg-clay-canvas;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+    @apply bg-clay-muted/20 rounded-full hover:bg-clay-muted/30 transition-colors;
   }
 }
 
-@layer components {
-  .glass-card {
-    @apply bg-premium-card backdrop-blur-xl border border-premium-border shadow-premium-card;
+@layer utilities {
+  @keyframes clay-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%       { transform: translateY(-20px) rotate(2deg); }
   }
-  
-  .glass-input {
-    @apply bg-white/5 border border-white/10 rounded-premium-sm px-4 py-3 text-white placeholder:text-premium-text-muted focus:outline-none focus:ring-2 focus:ring-premium-emerald/50 transition-all duration-300;
+  @keyframes clay-float-delayed {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%       { transform: translateY(-15px) rotate(-2deg); }
   }
-  
-  .premium-button {
-    @apply relative overflow-hidden rounded-premium font-heading tracking-tight font-bold transition-all duration-300 active:scale-95;
+  @keyframes clay-float-slow {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%       { transform: translateY(-30px) rotate(5deg); }
+  }
+  @keyframes clay-breathe {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.02); }
+  }
+
+  .animate-clay-float         { animation: clay-float 8s ease-in-out infinite; }
+  .animate-clay-float-delayed { animation: clay-float-delayed 10s ease-in-out infinite 2s; }
+  .animate-clay-float-slow    { animation: clay-float-slow 12s ease-in-out infinite 4s; }
+  .animate-clay-breathe       { animation: clay-breathe 6s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-clay-float,
+    .animate-clay-float-delayed,
+    .animate-clay-float-slow,
+    .animate-clay-breathe { animation: none; }
+  }
+
+  .text-gradient-hero {
+    @apply bg-gradient-to-r from-[#1A171E] via-[#16A34A] to-[#15803D] bg-clip-text text-transparent;
   }
 }
 
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 10px;
+/* Base Component Styles */
+.clay-card {
+  @apply relative overflow-hidden rounded-clay-lg bg-white/70 p-8 text-clay-foreground shadow-clayCard backdrop-blur-xl border border-clay-border transition-all duration-500 hover:-translate-y-2;
 }
 
-.typing-indicator span {
-  width: 6px;
-  height: 6px;
-  @apply bg-premium-emerald;
-  border-radius: 50%;
-  animation: typing 1.4s infinite;
+.clay-button {
+  @apply inline-flex items-center justify-center rounded-clay-sm h-14 px-8 font-bold tracking-wide transition-all duration-200 active:scale-[0.92] active:shadow-clayPressed focus-visible:ring-4 focus-visible:ring-clay-accent/30 focus-visible:ring-offset-2;
 }
 
-.typing-indicator span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-indicator span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing {
-  0%, 60%, 100% {
-    transform: translateY(0);
-    opacity: 0.3;
-  }
-  30% {
-    transform: translateY(-6px);
-    opacity: 1;
-  }
+.clay-input {
+  @apply flex w-full rounded-clay-sm border-0 bg-[#EFEBF5] px-6 py-4 text-clay-foreground text-lg shadow-clayPressed placeholder:text-clay-muted transition-all duration-200 focus:bg-white focus:ring-4 focus:ring-clay-accent/20 focus:outline-none;
 }
